@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -8,7 +9,8 @@
     "@vitejs/plugin-react": "latest",
     "vite": "latest",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "@tailwindcss/postcss": "latest"
   },
   "devDependencies": {
     "tailwindcss": "latest",
