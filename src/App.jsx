@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 
 export default function ResetFocusTracker() {
+  const STORAGE_KEY = 'dopamine-reset-data-v2';
+  const SELECTED_DAY_KEY = 'dopamine-reset-selected-day';
+
   const habits = [
     { name: 'Gym 45+ min', icon: '🏋️', points: 3 },
     { name: 'No porno', icon: '🚫', points: 3 },
@@ -19,25 +22,48 @@ export default function ResetFocusTracker() {
     }));
 
   const [days, setDays] = useState(() => {
-    const saved = localStorage.getItem('dopamine-reset-data');
-    return saved ? JSON.parse(saved) : createInitialDays();
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : createInitialDays();
+    } catch {
+      return createInitialDays();
+    }
   });
 
   const [selectedDayIndex, setSelectedDayIndex] = useState(() => {
-    const today = new Date().getDate();
-    return today <= 30 ? today - 1 : 0;
+    try {
+      const savedDay = localStorage.getItem(SELECTED_DAY_KEY);
+      if (savedDay !== null) return Number(savedDay);
+      return 0;
+    } catch {
+      return 0;
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem('dopamine-reset-data', JSON.stringify(days));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(days));
+    } catch {
+      // Storage unavailable
+    }
   }, [days]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SELECTED_DAY_KEY, String(selectedDayIndex));
+    } catch {
+      // Storage unavailable
+    }
+  }, [selectedDayIndex]);
 
   const resetTracker = () => {
     const confirmed = window.confirm('¿Seguro que quieres reiniciar todo el progreso?');
     if (confirmed) {
       const fresh = createInitialDays();
       setDays(fresh);
-      localStorage.removeItem('dopamine-reset-data');
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(SELECTED_DAY_KEY);
+      setSelectedDayIndex(0);
     }
   };
 
@@ -72,24 +98,40 @@ export default function ResetFocusTracker() {
   const scoreState = getScoreState(selectedScore);
 
   const toggleCheck = (habitIndex) => {
-    setDays((currentDays) =>
-      currentDays.map((day, index) =>
+    setDays((currentDays) => {
+      const updatedDays = currentDays.map((day, index) =>
         index === selectedDayIndex
           ? {
               ...day,
               checks: day.checks.map((checked, i) => (i === habitIndex ? !checked : checked)),
             }
           : day
-      )
-    );
+      );
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDays));
+      } catch {
+        // Storage unavailable
+      }
+
+      return updatedDays;
+    });
   };
 
   const updateFeeling = (value) => {
-    setDays((currentDays) =>
-      currentDays.map((day, index) =>
+    setDays((currentDays) => {
+      const updatedDays = currentDays.map((day, index) =>
         index === selectedDayIndex ? { ...day, feeling: value } : day
-      )
-    );
+      );
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDays));
+      } catch {
+        // Storage unavailable
+      }
+
+      return updatedDays;
+    });
   };
 
   return (
