@@ -40,25 +40,15 @@ export default function ResetFocusTracker() {
   ];
 
   const toggleCheck = (dayIndex, habitIndex) => {
-    const updated = days.map((day, index) =>
-      index === dayIndex
-        ? {
-            ...day,
-            checks: day.checks.map((checked, i) =>
-              i === habitIndex ? !checked : checked
-            ),
-          }
-        : day
-    );
-
+    const updated = [...days];
+    updated[dayIndex].checks[habitIndex] =
+      !updated[dayIndex].checks[habitIndex];
     setDays(updated);
   };
 
   const updateFeeling = (dayIndex, value) => {
-    const updated = days.map((day, index) =>
-      index === dayIndex ? { ...day, feeling: value } : day
-    );
-
+    const updated = [...days];
+    updated[dayIndex].feeling = value;
     setDays(updated);
   };
 
@@ -90,7 +80,9 @@ export default function ResetFocusTracker() {
     <div className="min-h-screen bg-zinc-950 text-white p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">DOPAMINE RESET & FOCUS</h1>
+          <h1 className="text-4xl font-bold mb-2">
+            DOPAMINE RESET & FOCUS
+          </h1>
 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <p className="text-zinc-400 text-lg">
@@ -130,9 +122,11 @@ export default function ResetFocusTracker() {
 
           <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
             <h2 className="text-xl font-semibold mb-2">🔥 Streaks</h2>
+
             <div className="space-y-2 text-zinc-400">
               <p>🔥 Días élite: {eliteStreak}</p>
               <p>💪 Buen progreso: {progressStreak}</p>
+
               <div className="mt-3 pt-3 border-t border-zinc-800">
                 <p className="text-white font-semibold">{level}</p>
               </div>
@@ -146,14 +140,17 @@ export default function ResetFocusTracker() {
               <thead className="bg-zinc-800 sticky top-0">
                 <tr>
                   <th className="text-left p-4">Día</th>
+
                   {habits.map((habit, index) => (
                     <th key={index} className="text-left p-4 text-sm">
                       <div>{habit.name}</div>
+
                       <div className="text-zinc-400 text-xs mt-1">
                         +{habit.points} pts
                       </div>
                     </th>
                   ))}
+
                   <th className="text-left p-4">Score</th>
                   <th className="text-left p-4">Estado Mental</th>
                 </tr>
@@ -181,12 +178,16 @@ export default function ResetFocusTracker() {
                       key={dayIndex}
                       className="border-t border-zinc-800 hover:bg-zinc-800/40 transition"
                     >
-                      <td className="p-4 font-semibold">Día {day.day}</td>
+                      <td className="p-4 font-semibold">
+                        Día {day.day}
+                      </td>
 
                       {habits.map((_, habitIndex) => (
                         <td key={habitIndex} className="p-4">
                           <button
-                            onClick={() => toggleCheck(dayIndex, habitIndex)}
+                            onClick={() =>
+                              toggleCheck(dayIndex, habitIndex)
+                            }
                             className={`w-7 h-7 rounded-lg border transition flex items-center justify-center text-sm font-bold ${
                               day.checks[habitIndex]
                                 ? 'bg-green-500 border-green-400 text-black'
@@ -208,7 +209,9 @@ export default function ResetFocusTracker() {
                       <td className="p-4">
                         <select
                           value={day.feeling}
-                          onChange={(e) => updateFeeling(dayIndex, e.target.value)}
+                          onChange={(e) =>
+                            updateFeeling(dayIndex, e.target.value)
+                          }
                           className="w-full h-10 rounded-xl bg-zinc-800 border border-zinc-700 px-3 text-sm outline-none focus:border-zinc-500"
                         >
                           <option>🔥 Imparable</option>
