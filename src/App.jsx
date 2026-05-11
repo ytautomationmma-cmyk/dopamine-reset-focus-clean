@@ -1,10 +1,20 @@
 import { useState, useEffect } from 'react';
 
 export default function ResetFocusTracker() {
+  const habits = [
+    { name: 'Gym 45+ min', icon: '🏋️', points: 3 },
+    { name: 'No porno', icon: '🚫', points: 3 },
+    { name: 'No weed antes de 12 PM', icon: '🌿', points: 2 },
+    { name: '2h Deep Work', icon: '💼', points: 3 },
+    { name: 'Dormir antes de 12', icon: '😴', points: 2 },
+    { name: '2L+ de agua', icon: '💧', points: 1 },
+    { name: 'Xbox máximo 2h', icon: '🎮', points: 1 },
+  ];
+
   const createInitialDays = () =>
     Array.from({ length: 30 }, (_, i) => ({
       day: i + 1,
-      checks: Array(7).fill(false),
+      checks: Array(habits.length).fill(false),
       feeling: '🙂 Bien',
     }));
 
@@ -13,15 +23,17 @@ export default function ResetFocusTracker() {
     return saved ? JSON.parse(saved) : createInitialDays();
   });
 
+  const [selectedDayIndex, setSelectedDayIndex] = useState(() => {
+    const today = new Date().getDate();
+    return today <= 30 ? today - 1 : 0;
+  });
+
   useEffect(() => {
     localStorage.setItem('dopamine-reset-data', JSON.stringify(days));
   }, [days]);
 
   const resetTracker = () => {
-    const confirmed = window.confirm(
-      '¿Seguro que quieres reiniciar todo el progreso?'
-    );
-
+    const confirmed = window.confirm('¿Seguro que quieres reiniciar todo el progreso?');
     if (confirmed) {
       const fresh = createInitialDays();
       setDays(fresh);
@@ -29,232 +41,202 @@ export default function ResetFocusTracker() {
     }
   };
 
-  const habits = [
-    { name: '🏋️ Gym 45+ min', points: 3 },
-    { name: '🚫 No porno', points: 3 },
-    { name: '🌿 No weed antes de 12 PM', points: 2 },
-    { name: '💼 2h Deep Work', points: 3 },
-    { name: '😴 Dormir antes de 12', points: 2 },
-    { name: '💧 2L+ de agua', points: 1 },
-    { name: '🎮 Xbox máximo 2h', points: 1 },
-  ];
+  const scoreForDay = (day) =>
+    day.checks.reduce((total, checked, i) => (checked ? total + habits[i].points : total), 0);
 
-  const toggleCheck = (dayIndex, habitIndex) => {
-    const updated = [...days];
-    updated[dayIndex].checks[habitIndex] =
-      !updated[dayIndex].checks[habitIndex];
-    setDays(updated);
-  };
+  const scores = days.map(scoreForDay);
+  const selectedDay = days[selectedDayIndex];
+  const selectedScore = scoreForDay(selectedDay);
+  const completedHabits = selectedDay.checks.filter(Boolean).length;
+  const totalPossible = habits.reduce((sum, habit) => sum + habit.points, 0);
+  const progressPercent = Math.round((selectedScore / totalPossible) * 100);
 
-  const updateFeeling = (dayIndex, value) => {
-    const updated = [...days];
-    updated[dayIndex].feeling = value;
-    setDays(updated);
-  };
-
-  const scores = days.map((day) =>
-    day.checks.reduce((total, checked, i) => {
-      return checked ? total + habits[i].points : total;
-    }, 0)
-  );
-
-  const eliteStreak = scores.reduce((streak, score) => {
-    return score >= 13 ? streak + 1 : streak;
-  }, 0);
-
-  const progressStreak = scores.reduce((streak, score) => {
-    return score >= 8 ? streak + 1 : streak;
-  }, 0);
+  const progressStreak = scores.reduce((streak, score) => (score >= 8 ? streak + 1 : 0), 0);
+  const eliteStreak = scores.reduce((streak, score) => (score >= 13 ? streak + 1 : 0), 0);
+  const completedDays = scores.filter((score) => score > 0).length;
+  const averageScore = completedDays
+    ? Math.round(scores.reduce((sum, score) => sum + score, 0) / completedDays)
+    : 0;
 
   let level = '💪 Nivel 1 — Recuperando Control';
+  if (progressStreak >= 30) level = '👑 Nivel 4 — Nueva Identidad';
+  else if (progressStreak >= 15) level = '⚡ Nivel 3 — Disciplina';
+  else if (progressStreak >= 5) level = '🔥 Nivel 2 — Momentum';
 
-  if (progressStreak >= 30) {
-    level = '👑 Nivel 4 — Nueva Identidad';
-  } else if (progressStreak >= 15) {
-    level = '⚡ Nivel 3 — Disciplina';
-  } else if (progressStreak >= 5) {
-    level = '🔥 Nivel 2 — Momentum';
-  }
+  const getScoreState = (score) => {
+    if (score >= 13) return { emoji: '🔥', label: 'Día élite', color: 'text-emerald-300', ring: 'ring-emerald-400/40', bg: 'bg-emerald-500/10' };
+    if (score >= 8) return { emoji: '💪', label: 'Buen progreso', color: 'text-orange-300', ring: 'ring-orange-400/40', bg: 'bg-orange-500/10' };
+    return { emoji: '🧭', label: 'Recalibrar enfoque', color: 'text-sky-300', ring: 'ring-sky-400/40', bg: 'bg-sky-500/10' };
+  };
+
+  const scoreState = getScoreState(selectedScore);
+
+  const toggleCheck = (habitIndex) => {
+    setDays((currentDays) =>
+      currentDays.map((day, index) =>
+        index === selectedDayIndex
+          ? {
+              ...day,
+              checks: day.checks.map((checked, i) => (i === habitIndex ? !checked : checked)),
+            }
+          : day
+      )
+    );
+  };
+
+  const updateFeeling = (value) => {
+    setDays((currentDays) =>
+      currentDays.map((day, index) =>
+        index === selectedDayIndex ? { ...day, feeling: value } : day
+      )
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">
-            DOPAMINE RESET & FOCUS
-          </h1>
+    <div className="min-h-screen bg-[#050507] text-white">
+      <div className="mx-auto max-w-md px-4 py-6 md:max-w-5xl md:px-8">
+        <header className="mb-6 rounded-[2rem] border border-white/10 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black p-6 shadow-2xl shadow-black/40">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.35em] text-emerald-300">
+                30 Day System
+              </p>
+              <h1 className="text-3xl font-black leading-tight md:text-5xl">
+                Dopamine Reset
+                <span className="block text-zinc-400">& Focus</span>
+              </h1>
+            </div>
+            <div className={`rounded-3xl px-4 py-3 text-center ring-1 ${scoreState.ring} ${scoreState.bg}`}>
+              <div className="text-3xl">{scoreState.emoji}</div>
+              <div className="text-xl font-black">{selectedScore}</div>
+              <div className="text-[10px] uppercase text-zinc-400">score</div>
+            </div>
+          </div>
 
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <p className="text-zinc-400 text-lg">
-              Sistema de control de hábitos — 30 días
-            </p>
+          <div className="mt-6">
+            <div className="mb-2 flex items-center justify-between text-sm text-zinc-400">
+              <span>{scoreState.label}</span>
+              <span>{progressPercent}%</span>
+            </div>
+            <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-lime-300 to-orange-300 transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+        </header>
 
-            <button
-              onClick={resetTracker}
-              className="bg-red-500/20 border border-red-500/30 text-red-300 px-4 py-2 rounded-xl hover:bg-red-500/30 transition text-sm font-semibold"
+        <section className="mb-5 grid grid-cols-3 gap-3">
+          <div className="rounded-3xl border border-white/10 bg-zinc-900/80 p-4">
+            <p className="text-2xl font-black">{progressStreak}</p>
+            <p className="text-xs text-zinc-400">💪 Streak</p>
+          </div>
+          <div className="rounded-3xl border border-white/10 bg-zinc-900/80 p-4">
+            <p className="text-2xl font-black">{eliteStreak}</p>
+            <p className="text-xs text-zinc-400">🔥 Élite</p>
+          </div>
+          <div className="rounded-3xl border border-white/10 bg-zinc-900/80 p-4">
+            <p className="text-2xl font-black">{averageScore}</p>
+            <p className="text-xs text-zinc-400">⚡ Promedio</p>
+          </div>
+        </section>
+
+        <section className="mb-5 rounded-3xl border border-white/10 bg-zinc-900/80 p-4">
+          <p className="mb-3 text-sm font-semibold text-zinc-300">{level}</p>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {days.map((day, index) => {
+              const score = scoreForDay(day);
+              const state = getScoreState(score);
+              const isSelected = index === selectedDayIndex;
+              return (
+                <button
+                  key={day.day}
+                  onClick={() => setSelectedDayIndex(index)}
+                  className={`min-w-12 rounded-2xl px-3 py-3 text-center transition ${
+                    isSelected
+                      ? 'bg-white text-black'
+                      : score > 0
+                      ? `${state.bg} ${state.color} ring-1 ${state.ring}`
+                      : 'bg-zinc-800 text-zinc-500'
+                  }`}
+                >
+                  <div className="text-xs font-bold">Día</div>
+                  <div className="text-lg font-black">{day.day}</div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <main className="rounded-[2rem] border border-white/10 bg-zinc-900/80 p-5 shadow-2xl shadow-black/30">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-2xl font-black">Día {selectedDay.day}</h2>
+              <p className="text-sm text-zinc-400">
+                {completedHabits}/{habits.length} hábitos completados
+              </p>
+            </div>
+            <select
+              value={selectedDay.feeling}
+              onChange={(e) => updateFeeling(e.target.value)}
+              className="rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none"
             >
-              Reiniciar progreso
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
-            <h2 className="text-xl font-semibold mb-2">🎯 Objetivo</h2>
-            <p className="text-zinc-400">
-              Construir disciplina, enfoque y control mental.
-            </p>
+              <option>🔥 Imparable</option>
+              <option>💪 Enfocado</option>
+              <option>🙂 Bien</option>
+              <option>🧭 Recalibrando</option>
+              <option>😵 Distraído</option>
+            </select>
           </div>
 
-          <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
-            <h2 className="text-xl font-semibold mb-2">🔥 Regla</h2>
-            <p className="text-zinc-400">
-              Nunca 2 días malos seguidos.
-            </p>
+          <div className="space-y-3">
+            {habits.map((habit, index) => {
+              const checked = selectedDay.checks[index];
+              return (
+                <button
+                  key={habit.name}
+                  onClick={() => toggleCheck(index)}
+                  className={`flex w-full items-center justify-between rounded-3xl border p-4 text-left transition active:scale-[0.99] ${
+                    checked
+                      ? 'border-emerald-400/40 bg-emerald-500/15'
+                      : 'border-white/10 bg-black/40 hover:bg-zinc-800/70'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`grid h-12 w-12 place-items-center rounded-2xl text-2xl ${checked ? 'bg-emerald-400 text-black' : 'bg-zinc-800'}`}>
+                      {habit.icon}
+                    </div>
+                    <div>
+                      <p className="font-bold">{habit.name}</p>
+                      <p className="text-sm text-zinc-400">+{habit.points} puntos</p>
+                    </div>
+                  </div>
+                  <div className={`grid h-8 w-8 place-items-center rounded-full border ${checked ? 'border-emerald-300 bg-emerald-400 text-black' : 'border-zinc-600 text-transparent'}`}>
+                    ✓
+                  </div>
+                </button>
+              );
+            })}
           </div>
+        </main>
 
-          <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
-            <h2 className="text-xl font-semibold mb-2">⚡ Meta</h2>
-            <p className="text-zinc-400">
-              Acumular días buenos y construir momentum.
-            </p>
+        <section className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="rounded-3xl border border-white/10 bg-zinc-900/80 p-4">
+            <h3 className="mb-2 font-bold">🧠 Mentalidad</h3>
+            <p className="text-sm text-zinc-400">La meta no es perfección. La meta es control.</p>
           </div>
-
-          <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
-            <h2 className="text-xl font-semibold mb-2">🔥 Streaks</h2>
-
-            <div className="space-y-2 text-zinc-400">
-              <p>🔥 Días élite: {eliteStreak}</p>
-              <p>💪 Buen progreso: {progressStreak}</p>
-
-              <div className="mt-3 pt-3 border-t border-zinc-800">
-                <p className="text-white font-semibold">{level}</p>
-              </div>
-            </div>
+          <div className="rounded-3xl border border-white/10 bg-zinc-900/80 p-4">
+            <h3 className="mb-2 font-bold">🔥 Score</h3>
+            <p className="text-sm text-zinc-400">🔥 13–15 élite · 💪 8–12 progreso · 🧭 menos de 8 recalibrar.</p>
           </div>
-        </div>
-
-        <div className="bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden shadow-2xl">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px]">
-              <thead className="bg-zinc-800 sticky top-0">
-                <tr>
-                  <th className="text-left p-4">Día</th>
-
-                  {habits.map((habit, index) => (
-                    <th key={index} className="text-left p-4 text-sm">
-                      <div>{habit.name}</div>
-
-                      <div className="text-zinc-400 text-xs mt-1">
-                        +{habit.points} pts
-                      </div>
-                    </th>
-                  ))}
-
-                  <th className="text-left p-4">Score</th>
-                  <th className="text-left p-4">Estado Mental</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {days.map((day, dayIndex) => {
-                  const score = day.checks.reduce((total, checked, i) => {
-                    return checked ? total + habits[i].points : total;
-                  }, 0);
-
-                  let scoreColor = 'text-red-400';
-                  let scoreEmoji = '🧭';
-
-                  if (score >= 13) {
-                    scoreColor = 'text-green-400';
-                    scoreEmoji = '🔥';
-                  } else if (score >= 8) {
-                    scoreColor = 'text-orange-400';
-                    scoreEmoji = '💪';
-                  }
-
-                  return (
-                    <tr
-                      key={dayIndex}
-                      className="border-t border-zinc-800 hover:bg-zinc-800/40 transition"
-                    >
-                      <td className="p-4 font-semibold">
-                        Día {day.day}
-                      </td>
-
-                      {habits.map((_, habitIndex) => (
-                        <td key={habitIndex} className="p-4">
-                          <button
-                            onClick={() =>
-                              toggleCheck(dayIndex, habitIndex)
-                            }
-                            className={`w-7 h-7 rounded-lg border transition flex items-center justify-center text-sm font-bold ${
-                              day.checks[habitIndex]
-                                ? 'bg-green-500 border-green-400 text-black'
-                                : 'bg-zinc-800 border-zinc-600 text-transparent hover:border-zinc-400'
-                            }`}
-                          >
-                            ✓
-                          </button>
-                        </td>
-                      ))}
-
-                      <td className={`p-4 font-bold text-lg ${scoreColor}`}>
-                        <div className="flex items-center gap-2">
-                          <span>{scoreEmoji}</span>
-                          <span>{score}</span>
-                        </div>
-                      </td>
-
-                      <td className="p-4">
-                        <select
-                          value={day.feeling}
-                          onChange={(e) =>
-                            updateFeeling(dayIndex, e.target.value)
-                          }
-                          className="w-full h-10 rounded-xl bg-zinc-800 border border-zinc-700 px-3 text-sm outline-none focus:border-zinc-500"
-                        >
-                          <option>🔥 Imparable</option>
-                          <option>💪 Enfocado</option>
-                          <option>🙂 Bien</option>
-                          <option>🧭 Recalibrando</option>
-                          <option>😵 Distraído</option>
-                        </select>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
-            <h3 className="text-lg font-semibold mb-3">🟢 Score</h3>
-            <div className="space-y-2 text-zinc-400">
-              <p>🔥 13–15 = Día élite</p>
-              <p>💪 8–12 = Buen progreso</p>
-              <p>🧭 Menos de 8 = Recalibrar enfoque</p>
-            </div>
-          </div>
-
-          <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
-            <h3 className="text-lg font-semibold mb-3">🧠 Mentalidad</h3>
-            <div className="space-y-2 text-zinc-400">
-              <p>La meta no es perfección.</p>
-              <p>La meta es control.</p>
-            </div>
-          </div>
-
-          <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
-            <h3 className="text-lg font-semibold mb-3">🔥 Identidad</h3>
-            <div className="space-y-2 text-zinc-400">
-              <p>Estás construyendo disciplina.</p>
-              <p>Estás construyendo enfoque.</p>
-            </div>
-          </div>
-        </div>
+          <button
+            onClick={resetTracker}
+            className="rounded-3xl border border-red-500/30 bg-red-500/10 p-4 text-left text-sm font-bold text-red-300"
+          >
+            Reiniciar progreso
+          </button>
+        </section>
       </div>
     </div>
   );
