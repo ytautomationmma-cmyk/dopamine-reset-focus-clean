@@ -386,7 +386,7 @@ export default function ResetFocusTracker() {
     });
   };
 
-  const updateExerciseSet = (exerciseId, setId, field, value) => {
+  const updateExerciseSet = (exerciseId, setIndex, field, value) => {
     setDays((currentDays) => {
       const updatedDays = currentDays.map((day, index) =>
         index === selectedDayIndex
@@ -396,8 +396,8 @@ export default function ResetFocusTracker() {
                 item.id === exerciseId
                   ? {
                       ...item,
-                      setsData: (item.setsData || []).map((set) =>
-                        set.id === setId ? { ...set, [field]: value } : set
+                      setsData: (item.setsData || []).map((set, index) =>
+                        index === setIndex ? { ...set, [field]: value } : set
                       ),
                     }
                   : item
@@ -416,7 +416,7 @@ export default function ResetFocusTracker() {
     });
   };
 
-  const removeExerciseSet = (exerciseId, setId) => {
+  const removeExerciseSet = (exerciseId, setIndex) => {
     setDays((currentDays) => {
       const updatedDays = currentDays.map((day, index) =>
         index === selectedDayIndex
@@ -428,8 +428,22 @@ export default function ResetFocusTracker() {
                 if (currentSets.length <= 1) return item;
                 return {
                   ...item,
-                  setsData: currentSets.filter((set) => set.id !== setId),
+                  setsData: currentSets.filter((_, index) => index !== setIndex),
                 };
+              }),
+            }
+          : day
+      );
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDays));
+      } catch {
+        // Storage unavailable
+      }
+
+      return updatedDays;
+    });
+  };
               }),
             }
           : day
@@ -750,11 +764,8 @@ export default function ResetFocusTracker() {
                               className="text-xs font-bold text-red-300"
                             >
                               Borrar set
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2">
+                          <button
+                              onClick={() => removeExerciseSet(item.id, setIndex)}         <div className="grid grid-cols-3 gap-2">
                           <div>
                             <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Reps</label>
                             <input
@@ -762,8 +773,7 @@ export default function ResetFocusTracker() {
                               onChange={(e) => updateExerciseSet(item.id, set.id, 'reps', e.target.value)}
                               inputMode="numeric"
                               placeholder="10"
-                              className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
-                            />
+                              className="w-full rounded-2xl border border-white/10 bgonChange={(e) => updateExerciseSet(item.id, setIndex, 'reps', e.target.value)}                   />
                           </div>
                           <div>
                             <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Peso</label>
@@ -772,8 +782,7 @@ export default function ResetFocusTracker() {
                               onChange={(e) => updateExerciseSet(item.id, set.id, 'weight', e.target.value)}
                               inputMode="decimal"
                               placeholder="135"
-                              className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
-                            />
+                              className="w-full rounded-2xl border border-white/10onChange={(e) => updateExerciseSet(item.id, setIndex, 'weight', e.target.value)}                    />
                           </div>
                           <div>
                             <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Unidad</label>
@@ -782,8 +791,7 @@ export default function ResetFocusTracker() {
                               onChange={(e) => updateExerciseSet(item.id, set.id, 'unit', e.target.value)}
                               className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
                             >
-                              <option value="lbs">LBS</option>
-                              <option value="kg">KG</option>
+onChange={(e) => updateExerciseSet(item.id, setIndex, 'unit', e.target.value)}                 <option value="kg">KG</option>
                             </select>
                           </div>
                         </div>
