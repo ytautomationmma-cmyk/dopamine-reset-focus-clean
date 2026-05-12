@@ -14,6 +14,22 @@ export default function ResetFocusTracker() {
     { name: 'Xbox máximo 2h', icon: '🎮', points: 1 },
   ];
 
+  const muscleGroups = [
+    { name: 'Pecho', emoji: '🛡️', exercises: ['Bench Press', 'Incline Dumbbell Press', 'Chest Fly', 'Push Ups', 'Dips'] },
+    { name: 'Hombros', emoji: '🔺', exercises: ['Shoulder Press', 'Lateral Raises', 'Front Raises', 'Rear Delt Fly', 'Arnold Press'] },
+    { name: 'Trapecio', emoji: '⛰️', exercises: ['Shrugs', 'Upright Row', 'Face Pulls', 'Farmer Walk'] },
+    { name: 'Bíceps', emoji: '💪', exercises: ['Barbell Curl', 'Dumbbell Curl', 'Hammer Curl', 'Preacher Curl', 'Cable Curl'] },
+    { name: 'Tríceps', emoji: '🔱', exercises: ['Tricep Pushdown', 'Skull Crushers', 'Close Grip Bench', 'Overhead Extension', 'Dips'] },
+    { name: 'Antebrazo', emoji: '✊', exercises: ['Wrist Curl', 'Reverse Wrist Curl', 'Farmer Walk', 'Reverse Curl'] },
+    { name: 'Espalda', emoji: '🦍', exercises: ['Lat Pulldown', 'Pull Ups', 'Barbell Row', 'Seated Cable Row', 'Deadlift'] },
+    { name: 'Abdominales', emoji: '⚡', exercises: ['Crunches', 'Leg Raises', 'Cable Crunch', 'Plank', 'Hanging Knee Raises'] },
+    { name: 'Lumbares', emoji: '🧱', exercises: ['Back Extensions', 'Good Mornings', 'Deadlift', 'Superman Hold'] },
+    { name: 'Cuádriceps', emoji: '🦵', exercises: ['Squat', 'Leg Press', 'Leg Extension', 'Lunges', 'Hack Squat'] },
+    { name: 'Bíceps femoral', emoji: '⚙️', exercises: ['Romanian Deadlift', 'Leg Curl', 'Good Mornings', 'Hip Thrust'] },
+    { name: 'Abductores', emoji: '↔️', exercises: ['Hip Abduction Machine', 'Cable Hip Abduction', 'Side Lunges', 'Banded Walks'] },
+    { name: 'Pantorrilla', emoji: '🐄', exercises: ['Standing Calf Raise', 'Seated Calf Raise', 'Leg Press Calf Raise', 'Single Leg Calf Raise'] },
+  ];
+
   const createInitialDays = () =>
     Array.from({ length: 30 }, (_, i) => ({
       day: i + 1,
@@ -40,6 +56,9 @@ export default function ResetFocusTracker() {
       return 0;
     }
   });
+
+  const [selectedMuscle, setSelectedMuscle] = useState('Pecho');
+  const [selectedExercise, setSelectedExercise] = useState('Bench Press');
 
   useEffect(() => {
     try {
@@ -140,6 +159,9 @@ export default function ResetFocusTracker() {
   };
 
   const addWorkoutExercise = () => {
+    const muscle = muscleGroups.find((group) => group.name === selectedMuscle) || muscleGroups[0];
+    const exerciseName = selectedExercise || muscle.exercises[0];
+
     setDays((currentDays) => {
       const updatedDays = currentDays.map((day, index) =>
         index === selectedDayIndex
@@ -149,7 +171,8 @@ export default function ResetFocusTracker() {
                 ...(day.workout || []),
                 {
                   id: Date.now(),
-                  exercise: '',
+                  muscle: muscle.name,
+                  exercise: exerciseName,
                   sets: '',
                   reps: '',
                   weight: '',
@@ -168,6 +191,25 @@ export default function ResetFocusTracker() {
       return updatedDays;
     });
   };
+
+  const selectedMuscleData = muscleGroups.find((group) => group.name === selectedMuscle) || muscleGroups[0];
+
+  const getExerciseHistory = (exerciseName) => {
+    const history = [];
+
+    days.forEach((day) => {
+      (day.workout || []).forEach((item) => {
+        if (item.exercise === exerciseName && (item.weight || item.reps || item.sets)) {
+          history.push({ day: day.day, ...item });
+        }
+      });
+    });
+
+    return history;
+  };
+
+  const selectedExerciseHistory = getExerciseHistory(selectedExercise);
+  const lastExerciseEntry = selectedExerciseHistory[selectedExerciseHistory.length - 1];
 
   const updateWorkoutExercise = (exerciseId, field, value) => {
     setDays((currentDays) => {
@@ -343,19 +385,71 @@ export default function ResetFocusTracker() {
         </main>
 
         <section className="mt-5 rounded-[2rem] border border-white/10 bg-zinc-900/80 p-5 shadow-2xl shadow-black/30">
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-2xl font-black">🏋️ Workout Log</h2>
-              <p className="text-sm text-zinc-400">
-                Registra ejercicios, sets, reps y peso del Día {selectedDay.day}
-              </p>
+          <div className="mb-5">
+            <h2 className="text-2xl font-black">🏋️ Workout Log</h2>
+            <p className="text-sm text-zinc-400">
+              Selecciona músculo, ejercicio y registra tu progreso del Día {selectedDay.day}
+            </p>
+          </div>
+
+          <div className="mb-5 rounded-3xl border border-white/10 bg-black/30 p-4">
+            <p className="mb-3 text-sm font-bold text-zinc-300">1. Selecciona músculo</p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+              {muscleGroups.map((group) => {
+                const active = selectedMuscle === group.name;
+                return (
+                  <button
+                    key={group.name}
+                    onClick={() => {
+                      setSelectedMuscle(group.name);
+                      setSelectedExercise(group.exercises[0]);
+                    }}
+                    className={`rounded-2xl border p-3 text-left transition active:scale-[0.98] ${
+                      active
+                        ? 'border-emerald-400/60 bg-emerald-500/15 text-emerald-200'
+                        : 'border-white/10 bg-zinc-950 text-zinc-300'
+                    }`}
+                  >
+                    <div className="text-2xl">{group.emoji}</div>
+                    <div className="mt-1 text-xs font-bold">{group.name}</div>
+                  </button>
+                );
+              })}
             </div>
-            <button
-              onClick={addWorkoutExercise}
-              className="rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-black text-black active:scale-95"
-            >
-              + Añadir
-            </button>
+          </div>
+
+          <div className="mb-5 rounded-3xl border border-white/10 bg-black/30 p-4">
+            <p className="mb-3 text-sm font-bold text-zinc-300">2. Selecciona ejercicio</p>
+            <div className="flex gap-2">
+              <select
+                value={selectedExercise}
+                onChange={(e) => setSelectedExercise(e.target.value)}
+                className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-emerald-400/60"
+              >
+                {selectedMuscleData.exercises.map((exercise) => (
+                  <option key={exercise}>{exercise}</option>
+                ))}
+              </select>
+              <button
+                onClick={addWorkoutExercise}
+                className="rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-black text-black active:scale-95"
+              >
+                + Añadir
+              </button>
+            </div>
+
+            <div className="mt-3 rounded-2xl border border-white/10 bg-zinc-950 p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">Historial rápido</p>
+              {lastExerciseEntry ? (
+                <p className="mt-1 text-sm text-zinc-300">
+                  Última vez: Día {lastExerciseEntry.day} · {lastExerciseEntry.sets || '-'} sets · {lastExerciseEntry.reps || '-'} reps · {lastExerciseEntry.weight || '-'}
+                </p>
+              ) : (
+                <p className="mt-1 text-sm text-zinc-500">
+                  Todavía no hay historial para {selectedExercise}.
+                </p>
+              )}
+            </div>
           </div>
 
           {(selectedDay.workout || []).length === 0 ? (
@@ -374,12 +468,10 @@ export default function ResetFocusTracker() {
                   className="rounded-3xl border border-white/10 bg-black/40 p-4"
                 >
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <input
-                      value={item.exercise}
-                      onChange={(e) => updateWorkoutExercise(item.id, 'exercise', e.target.value)}
-                      placeholder="Ejercicio ej: Bench Press"
-                      className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-emerald-400/60"
-                    />
+                    <div>
+                      <p className="text-xs font-bold uppercase text-emerald-300">{item.muscle || 'Músculo'}</p>
+                      <p className="text-lg font-black">{item.exercise || 'Ejercicio'}</p>
+                    </div>
                     <button
                       onClick={() => removeWorkoutExercise(item.id)}
                       className="rounded-2xl border border-red-500/30 bg-red-500/10 px-3 py-3 text-sm font-bold text-red-300"
