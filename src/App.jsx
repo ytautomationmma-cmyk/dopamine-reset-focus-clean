@@ -1,5 +1,185 @@
 import { useState, useEffect } from 'react';
 
+function FitnessIcon({ type, active = false }) {
+  const colorClass = active ? 'text-emerald-300' : 'text-zinc-300';
+  const common = `h-7 w-7 ${colorClass}`;
+
+  const icons = {
+    cardio: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" />
+        <path d="M3 12h4l2-4 3 8 2-4h7" />
+      </svg>
+    ),
+    glutes: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 4c-2 3-3 6-3 9 0 4 2 7 5 7 2 0 3-2 3-5" />
+        <path d="M16 4c2 3 3 6 3 9 0 4-2 7-5 7-2 0-3-2-3-5" />
+        <path d="M12 5v10" />
+      </svg>
+    ),
+    chest: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 5c2 1 4 2 6 2s4-1 6-2" />
+        <path d="M5 7c-1 3-1 8 1 12" />
+        <path d="M19 7c1 3 1 8-1 12" />
+        <path d="M12 7v12" />
+        <path d="M7 11c2-1 3-1 5 0" />
+        <path d="M12 11c2-1 3-1 5 0" />
+      </svg>
+    ),
+    shoulders: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="5" r="2" />
+        <path d="M6 10c2-2 10-2 12 0" />
+        <path d="M4 12c2 1 3 3 3 6" />
+        <path d="M20 12c-2 1-3 3-3 6" />
+        <path d="M8 12h8" />
+      </svg>
+    ),
+    traps: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 4v4" />
+        <path d="M7 8c1 4 3 6 5 6s4-2 5-6" />
+        <path d="M5 20c1-5 3-8 7-8s6 3 7 8" />
+      </svg>
+    ),
+    biceps: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M7 15c2-5 6-8 10-6" />
+        <path d="M10 19c4 1 8-1 9-5" />
+        <path d="M7 15l-3 3" />
+        <path d="M17 9l3-3" />
+        <path d="M9 13c2 2 5 2 7 0" />
+      </svg>
+    ),
+    triceps: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 7h7c4 0 7 3 7 7" />
+        <path d="M5 17h7c4 0 7-3 7-7" />
+        <path d="M12 7v10" />
+      </svg>
+    ),
+    forearm: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 20c2-6 4-10 8-15" />
+        <path d="M12 21c1-5 3-9 6-14" />
+        <path d="M6 18h8" />
+        <path d="M16 5l3-2" />
+      </svg>
+    ),
+    back: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="4" r="2" />
+        <path d="M7 8c1 7 2 11 5 13" />
+        <path d="M17 8c-1 7-2 11-5 13" />
+        <path d="M8 10h8" />
+        <path d="M9 14h6" />
+      </svg>
+    ),
+    abs: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 4h8v16H8z" />
+        <path d="M8 9h8" />
+        <path d="M8 14h8" />
+        <path d="M12 4v16" />
+      </svg>
+    ),
+    lowerback: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3v18" />
+        <path d="M8 8c2 2 6 2 8 0" />
+        <path d="M7 14c3 3 7 3 10 0" />
+        <path d="M9 19c2 1 4 1 6 0" />
+      </svg>
+    ),
+    quads: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 3c3 4 3 9 2 18" />
+        <path d="M15 3c-2 5-2 10 0 18" />
+        <path d="M8 11h8" />
+      </svg>
+    ),
+    hamstrings: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 3c-1 6 0 12 3 18" />
+        <path d="M15 3c1 6 0 12-3 18" />
+        <path d="M9 15h6" />
+      </svg>
+    ),
+    abductors: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 4c2 4 2 10 0 16" />
+        <path d="M16 4c-2 4-2 10 0 16" />
+        <path d="M5 12h14" />
+        <path d="M5 12l3-3" />
+        <path d="M5 12l3 3" />
+        <path d="M19 12l-3-3" />
+        <path d="M19 12l-3 3" />
+      </svg>
+    ),
+    calves: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10 3c-1 6 1 10 4 14" />
+        <path d="M15 8c-3 2-4 6-2 13" />
+        <path d="M9 21h7" />
+      </svg>
+    ),
+  };
+
+  return icons[type] || icons.biceps;
+}
+
+function FitnessIcon({ type, active = false }) {
+  const colorClass = active ? 'text-emerald-300' : 'text-zinc-300';
+  const common = `h-7 w-7 ${colorClass}`;
+
+  const icons = {
+    cardio: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" />
+        <path d="M3 12h4l2-4 3 8 2-4h7" />
+      </svg>
+    ),
+    glutes: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 4c-2 3-3 6-3 9 0 4 2 7 5 7 2 0 3-2 3-5" />
+        <path d="M16 4c2 3 3 6 3 9 0 4-2 7-5 7-2 0-3-2-3-5" />
+        <path d="M12 5v10" />
+      </svg>
+    ),
+    chest: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 5c2 1 4 2 6 2s4-1 6-2" />
+        <path d="M5 7c-1 3-1 8 1 12" />
+        <path d="M19 7c1 3 1 8-1 12" />
+        <path d="M12 7v12" />
+        <path d="M7 11c2-1 3-1 5 0" />
+        <path d="M12 11c2-1 3-1 5 0" />
+      </svg>
+    ),
+    shoulders: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="5" r="2" />
+        <path d="M6 10c2-2 10-2 12 0" />
+        <path d="M4 12c2 1 3 3 3 6" />
+        <path d="M20 12c-2 1-3 3-3 6" />
+        <path d="M8 12h8" />
+      </svg>
+    ),
+    traps: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 4v4" />
+        <path d="M7 8c1 4 3 6 5 6s4-2 5-6" />
+        <path d="M5 20c1-5 3-8 7-8s6 3 7 8" />
+      </svg>
+    ),
+    biceps: (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M7 15c2-5 6-8 10-6" />
+        <path d="M10 19c4 1 8-1 9-5" />
+        <path d="M7 15l-3 3" />
+
 export default function ResetFocusTracker() {
   const STORAGE_KEY = 'dopamine-reset-data-v2';
   const SELECTED_DAY_KEY = 'dopamine-reset-selected-day';
@@ -17,21 +197,21 @@ export default function ResetFocusTracker() {
   ];
 
   const muscleGroups = [
-    { name: 'Cardio', emoji: '❤️', exercises: ['Correr', 'Bicicleta', 'Máquina Elíptica', 'StairMaster', 'Caminata Inclinada'] },
-    { name: 'Glúteos', emoji: '🍑', exercises: ['Hip Thrust', 'Glute Bridge', 'Cable Kickback', 'Bulgarian Split Squat', 'Smith Machine Hip Thrust'] },
-    { name: 'Pecho', emoji: '🛡️', exercises: ['Bench Press', 'Incline Dumbbell Press', 'Chest Fly', 'Push Ups', 'Dips'] },
-    { name: 'Hombros', emoji: '🔺', exercises: ['Shoulder Press', 'Lateral Raises', 'Front Raises', 'Rear Delt Fly', 'Arnold Press'] },
-    { name: 'Trapecio', emoji: '⛰️', exercises: ['Shrugs', 'Upright Row', 'Face Pulls', 'Farmer Walk'] },
-    { name: 'Bíceps', emoji: '💪', exercises: ['Barbell Curl', 'Dumbbell Curl', 'Hammer Curl', 'Preacher Curl', 'Cable Curl'] },
-    { name: 'Tríceps', emoji: '🔱', exercises: ['Tricep Pushdown', 'Skull Crushers', 'Close Grip Bench', 'Overhead Extension', 'Dips'] },
-    { name: 'Antebrazo', emoji: '✊', exercises: ['Wrist Curl', 'Reverse Wrist Curl', 'Farmer Walk', 'Reverse Curl'] },
-    { name: 'Espalda', emoji: '🦍', exercises: ['Lat Pulldown', 'Pull Ups', 'Barbell Row', 'Seated Cable Row', 'Deadlift'] },
-    { name: 'Abdominales', emoji: '⚡', exercises: ['Crunches', 'Leg Raises', 'Cable Crunch', 'Plank', 'Hanging Knee Raises'] },
-    { name: 'Lumbares', emoji: '🧱', exercises: ['Back Extensions', 'Good Mornings', 'Deadlift', 'Superman Hold'] },
-    { name: 'Cuádriceps', emoji: '🦵', exercises: ['Squat', 'Leg Press', 'Leg Extension', 'Lunges', 'Hack Squat'] },
-    { name: 'Bíceps femoral', emoji: '⚙️', exercises: ['Romanian Deadlift', 'Leg Curl', 'Good Mornings', 'Hip Thrust'] },
-    { name: 'Abductores', emoji: '↔️', exercises: ['Hip Abduction Machine', 'Cable Hip Abduction', 'Side Lunges', 'Banded Walks'] },
-    { name: 'Pantorrilla', emoji: '🐄', exercises: ['Standing Calf Raise', 'Seated Calf Raise', 'Leg Press Calf Raise', 'Single Leg Calf Raise'] },
+    { name: 'Cardio', iconType: 'cardio', exercises: ['Correr', 'Bicicleta', 'Máquina Elíptica', 'StairMaster', 'Caminata Inclinada'] },
+    { name: 'Glúteos', iconType: 'glutes', exercises: ['Hip Thrust', 'Glute Bridge', 'Cable Kickback', 'Bulgarian Split Squat', 'Smith Machine Hip Thrust'] },
+    { name: 'Pecho', iconType: 'chest', exercises: ['Bench Press', 'Incline Dumbbell Press', 'Chest Fly', 'Push Ups', 'Dips'] },
+    { name: 'Hombros', iconType: 'shoulders', exercises: ['Shoulder Press', 'Lateral Raises', 'Front Raises', 'Rear Delt Fly', 'Arnold Press'] },
+    { name: 'Trapecio', iconType: 'traps', exercises: ['Shrugs', 'Upright Row', 'Face Pulls', 'Farmer Walk'] },
+    { name: 'Bíceps', iconType: 'biceps', exercises: ['Barbell Curl', 'Dumbbell Curl', 'Hammer Curl', 'Preacher Curl', 'Cable Curl'] },
+    { name: 'Tríceps', iconType: 'triceps', exercises: ['Tricep Pushdown', 'Skull Crushers', 'Close Grip Bench', 'Overhead Extension', 'Dips'] },
+    { name: 'Antebrazo', iconType: 'forearm', exercises: ['Wrist Curl', 'Reverse Wrist Curl', 'Farmer Walk', 'Reverse Curl'] },
+    { name: 'Espalda', iconType: 'back', exercises: ['Lat Pulldown', 'Pull Ups', 'Barbell Row', 'Seated Cable Row', 'Deadlift'] },
+    { name: 'Abdominales', iconType: 'abs', exercises: ['Crunches', 'Leg Raises', 'Cable Crunch', 'Plank', 'Hanging Knee Raises'] },
+    { name: 'Lumbares', iconType: 'lowerback', exercises: ['Back Extensions', 'Good Mornings', 'Deadlift', 'Superman Hold'] },
+    { name: 'Cuádriceps', iconType: 'quads', exercises: ['Squat', 'Leg Press', 'Leg Extension', 'Lunges', 'Hack Squat'] },
+    { name: 'Bíceps femoral', iconType: 'hamstrings', exercises: ['Romanian Deadlift', 'Leg Curl', 'Good Mornings', 'Hip Thrust'] },
+    { name: 'Abductores', iconType: 'abductors', exercises: ['Hip Abduction Machine', 'Cable Hip Abduction', 'Side Lunges', 'Banded Walks'] },
+    { name: 'Pantorrilla', iconType: 'calves', exercises: ['Standing Calf Raise', 'Seated Calf Raise', 'Leg Press Calf Raise', 'Single Leg Calf Raise'] },
   ];
 
   const createInitialDays = () =>
@@ -689,7 +869,9 @@ export default function ResetFocusTracker() {
                         : 'border-white/10 bg-zinc-950 text-zinc-300'
                     }`}
                   >
-                    <div className="text-2xl">{group.emoji}</div>
+                    <div className={`grid h-10 w-10 place-items-center rounded-2xl ${active ? 'bg-emerald-400/15' : 'bg-zinc-900'}`}>
+                      <FitnessIcon type={group.iconType} active={active} />
+                    </div>
                     <div className="mt-1 text-xs font-bold">{group.name}</div>
                   </button>
                 );
@@ -830,117 +1012,4 @@ export default function ResetFocusTracker() {
                               onChange={(e) => updateCardioData(item.id, 'distance', e.target.value)}
                               inputMode="decimal"
                               placeholder="5"
-                              className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
-                            />
-
-                            <select
-                              value={item.cardioData?.distanceUnit || 'km'}
-                              onChange={(e) => updateCardioData(item.id, 'distanceUnit', e.target.value)}
-                              className="rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
-                            >
-                              <option value="km">KM</option>
-                              <option value="mi">MI</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-3">
-                        <p className="text-xs font-bold uppercase tracking-wide text-emerald-300">
-                          Pace automático
-                        </p>
-                        <p className="mt-1 text-lg font-black text-white">
-                          {calculatePace(item.cardioData?.time, item.cardioData?.distance)
-                            ? `${calculatePace(item.cardioData?.time, item.cardioData?.distance)} min/${item.cardioData?.distanceUnit || 'km'}`
-                            : '--'}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                  <div className="space-y-2">
-                    {(item.setsData || [{ id: `${item.id}-legacy`, reps: item.reps || '', weight: item.weight || '', unit: 'lbs' }]).map((set, setIndex) => (
-                      <div key={set.id} className="rounded-2xl border border-white/10 bg-zinc-950 p-3">
-                        <div className="mb-2 flex items-center justify-between">
-                          <p className="text-xs font-black uppercase tracking-wide text-zinc-500">
-                            Set {setIndex + 1}
-                          </p>
-                          {(item.setsData || []).length > 1 && (
-                            <button
-                              onClick={() => removeExerciseSet(item.id, setIndex)}
-                              className="text-xs font-bold text-red-300"
-                            >
-                              Borrar set
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2">
-                          <div>
-                            <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Reps</label>
-                            <input
-                              value={set.reps}
-                              onChange={(e) => updateExerciseSet(item.id, setIndex, 'reps', e.target.value)}
-                              inputMode="numeric"
-                              placeholder="10"
-                              className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
-                            />
-                          </div>
-                          <div>
-                            <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Peso</label>
-                            <input
-                              value={set.weight}
-                              onChange={(e) => updateExerciseSet(item.id, setIndex, 'weight', e.target.value)}
-                              inputMode="decimal"
-                              placeholder="135"
-                              className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
-                            />
-                          </div>
-                          <div>
-                            <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Unidad</label>
-                            <select
-                              value={set.unit || 'lbs'}
-                              onChange={(e) => updateExerciseSet(item.id, setIndex, 'unit', e.target.value)}
-                              className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
-                            >
-                              <option value="lbs">LBS</option>
-                              <option value="kg">KG</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-
-                    <button
-                      onClick={() => addSetToExercise(item.id)}
-                      className="w-full rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-black text-emerald-300 active:scale-95"
-                    >
-                      + Añadir set
-                    </button>
-                  </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
-          <div className="rounded-3xl border border-white/10 bg-zinc-900/80 p-4">
-            <h3 className="mb-2 font-bold">🧠 Mentalidad</h3>
-            <p className="text-sm text-zinc-400">La meta no es perfección. La meta es control.</p>
-          </div>
-          <div className="rounded-3xl border border-white/10 bg-zinc-900/80 p-4">
-            <h3 className="mb-2 font-bold">🔥 Score</h3>
-            <p className="text-sm text-zinc-400">🔥 13–15 élite · 💪 8–12 progreso · 🧭 menos de 8 recalibrar.</p>
-          </div>
-          <button
-            onClick={resetTracker}
-            className="rounded-3xl border border-red-500/30 bg-red-500/10 p-4 text-left text-sm font-bold text-red-300"
-          >
-            Reiniciar progreso
-          </button>
-        </section>
-      </div>
-    </div>
-  );
-}
+                
