@@ -4,6 +4,7 @@ export default function ResetFocusTracker() {
   const STORAGE_KEY = 'dopamine-reset-data-v2';
   const SELECTED_DAY_KEY = 'dopamine-reset-selected-day';
   const CUSTOM_EXERCISES_KEY = 'dopamine-reset-custom-exercises';
+  const EXERCISE_RENAMES_KEY = 'dopamine-reset-exercise-renames';
 
   const habits = [
     { name: 'Gym 45+ min', icon: '🏋️', points: 3 },
@@ -67,9 +68,19 @@ export default function ResetFocusTracker() {
     }
   });
 
+  const [exerciseRenames, setExerciseRenames] = useState(() => {
+    try {
+      const saved = localStorage.getItem(EXERCISE_RENAMES_KEY);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
   const [selectedMuscle, setSelectedMuscle] = useState('Pecho');
   const [selectedExercise, setSelectedExercise] = useState('Bench Press');
   const [newExerciseName, setNewExerciseName] = useState('');
+  const [renameExerciseName, setRenameExerciseName] = useState('');
 
   useEffect(() => {
     try {
@@ -94,6 +105,14 @@ export default function ResetFocusTracker() {
       // Storage unavailable
     }
   }, [customExercises]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(EXERCISE_RENAMES_KEY, JSON.stringify(exerciseRenames));
+    } catch {
+      // Storage unavailable
+    }
+  }, [exerciseRenames]);
 
   const resetTracker = () => {
     const confirmed = window.confirm('¿Seguro que quieres reiniciar todo el progreso?');
@@ -180,7 +199,59 @@ export default function ResetFocusTracker() {
   const getExercisesForMuscle = (muscleName) => {
     const baseMuscle = muscleGroups.find((group) => group.name === muscleName) || muscleGroups[0];
     const customList = customExercises[muscleName] || [];
-    return [...new Set([...baseMuscle.exercises, ...customList])];
+    const renameMap = exerciseRenames[muscleName] || {};
+    const renamedBaseExercises = baseMuscle.exercises.map((exercise) => renameMap[exercise] || exercise);
+    return [...new Set([...renamedBaseExercises, ...customList])];
+  };
+
+  const saveExerciseRename = () => {
+    const cleanName = renameExerciseName.trim();
+    if (!cleanName || cleanName === selectedExercise) return;
+
+    const baseMuscle = muscleGroups.find((group) => group.name === selectedMuscle) || muscleGroups[0];
+    const currentRenameMap = exerciseRenames[selectedMuscle] || {};
+    const originalBaseExercise = baseMuscle.exercises.find(
+      (exercise) => (currentRenameMap[exercise] || exercise) === selectedExercise
+    );
+
+    if (originalBaseExercise) {
+      setExerciseRenames((current) => ({
+        ...current,
+        [selectedMuscle]: {
+          ...(current[selectedMuscle] || {}),
+          [originalBaseExercise]: cleanName,
+        },
+      }));
+    } else {
+      setCustomExercises((current) => ({
+        ...current,
+        [selectedMuscle]: (current[selectedMuscle] || []).map((exercise) =>
+          exercise === selectedExercise ? cleanName : exercise
+        ),
+      }));
+    }
+
+    setDays((currentDays) => {
+      const updatedDays = currentDays.map((day) => ({
+        ...day,
+        workout: (day.workout || []).map((item) =>
+          item.muscle === selectedMuscle && item.exercise === selectedExercise
+            ? { ...item, exercise: cleanName }
+            : item
+        ),
+      }));
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDays));
+      } catch {
+        // Storage unavailable
+      }
+
+      return updatedDays;
+    });
+
+    setSelectedExercise(cleanName);
+    setRenameExerciseName('');
   };
 
   const addCustomExercise = () => {
@@ -222,9 +293,9 @@ export default function ResetFocusTracker() {
                   id: Date.now(),
                   muscle: muscle.name,
                   exercise: exerciseName,
-                  sets: '',
-                  reps: '',
-                  weight: '',
+                  setsData: [
+                    { id: Date.now() + 1, reps: '', weight: '', unit: 'lbs' },
+                  ],
                 },
               ],
             }
@@ -270,6 +341,96 @@ export default function ResetFocusTracker() {
               workout: (day.workout || []).map((item) =>
                 item.id === exerciseId ? { ...item, [field]: value } : item
               ),
+            }
+          : day
+      );
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDays));
+      } catch {
+        // Storage unavailable
+      }
+
+      return updatedDays;
+    });
+  };
+
+  const addSetToExercise = (exerciseId) => {
+    setDays((currentDays) => {
+      const updatedDays = currentDays.map((day, index) =>
+        index === selectedDayIndex
+          ? {
+              ...day,
+              workout: (day.workout || []).map((item) => {
+                if (item.id !== exerciseId) return item;
+                const currentSets = item.setsData || [{ id: Date.now(), reps: item.reps || '', weight: item.weight || '', unit: 'lbs' }];
+                return {
+                  ...item,
+                  setsData: [
+                    ...currentSets,
+                    { id: Date.now(), reps: '', weight: '', unit: currentSets[currentSets.length - 1]?.unit || 'lbs' },
+                  ],
+                };
+              }),
+            }
+          : day
+      );
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDays));
+      } catch {
+        // Storage unavailable
+      }
+
+      return updatedDays;
+    });
+  };
+
+  const updateExerciseSet = (exerciseId, setId, field, value) => {
+    setDays((currentDays) => {
+      const updatedDays = currentDays.map((day, index) =>
+        index === selectedDayIndex
+          ? {
+              ...day,
+              workout: (day.workout || []).map((item) =>
+                item.id === exerciseId
+                  ? {
+                      ...item,
+                      setsData: (item.setsData || []).map((set) =>
+                        set.id === setId ? { ...set, [field]: value } : set
+                      ),
+                    }
+                  : item
+              ),
+            }
+          : day
+      );
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDays));
+      } catch {
+        // Storage unavailable
+      }
+
+      return updatedDays;
+    });
+  };
+
+  const removeExerciseSet = (exerciseId, setId) => {
+    setDays((currentDays) => {
+      const updatedDays = currentDays.map((day, index) =>
+        index === selectedDayIndex
+          ? {
+              ...day,
+              workout: (day.workout || []).map((item) => {
+                if (item.id !== exerciseId) return item;
+                const currentSets = item.setsData || [];
+                if (currentSets.length <= 1) return item;
+                return {
+                  ...item,
+                  setsData: currentSets.filter((set) => set.id !== setId),
+                };
+              }),
             }
           : day
       );
@@ -490,6 +651,30 @@ export default function ResetFocusTracker() {
             </div>
 
             <div className="mt-3 rounded-2xl border border-white/10 bg-zinc-950 p-3">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-zinc-500">Modificar nombre seleccionado</p>
+              <div className="flex gap-2">
+                <input
+                  value={renameExerciseName}
+                  onChange={(e) => setRenameExerciseName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') saveExerciseRename();
+                  }}
+                  placeholder={`Renombrar ${selectedExercise}`}
+                  className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm outline-none focus:border-emerald-400/60"
+                />
+                <button
+                  onClick={saveExerciseRename}
+                  className="rounded-2xl border border-sky-400/40 bg-sky-500/10 px-4 py-3 text-sm font-black text-sky-300 active:scale-95"
+                >
+                  Cambiar
+                </button>
+              </div>
+              <p className="mt-2 text-xs text-zinc-500">
+                Útil para crear variaciones como Open, Close, unilateral o máquina específica.
+              </p>
+            </div>
+
+            <div className="mt-3 rounded-2xl border border-white/10 bg-zinc-950 p-3">
               <p className="mb-2 text-xs font-bold uppercase tracking-wide text-zinc-500">Agregar ejercicio nuevo</p>
               <div className="flex gap-2">
                 <input
@@ -514,7 +699,7 @@ export default function ResetFocusTracker() {
               <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">Historial rápido</p>
               {lastExerciseEntry ? (
                 <p className="mt-1 text-sm text-zinc-300">
-                  Última vez: Día {lastExerciseEntry.day} · {lastExerciseEntry.sets || '-'} sets · {lastExerciseEntry.reps || '-'} reps · {lastExerciseEntry.weight || '-'}
+                  Última vez: Día {lastExerciseEntry.day} · {(lastExerciseEntry.setsData || []).length || lastExerciseEntry.sets || '-'} sets registrados
                 </p>
               ) : (
                 <p className="mt-1 text-sm text-zinc-500">
@@ -552,37 +737,65 @@ export default function ResetFocusTracker() {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Sets</label>
-                      <input
-                        value={item.sets}
-                        onChange={(e) => updateWorkoutExercise(item.id, 'sets', e.target.value)}
-                        inputMode="numeric"
-                        placeholder="3"
-                        className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Reps</label>
-                      <input
-                        value={item.reps}
-                        onChange={(e) => updateWorkoutExercise(item.id, 'reps', e.target.value)}
-                        inputMode="numeric"
-                        placeholder="10"
-                        className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Peso</label>
-                      <input
-                        value={item.weight}
-                        onChange={(e) => updateWorkoutExercise(item.id, 'weight', e.target.value)}
-                        inputMode="decimal"
-                        placeholder="135 lb"
-                        className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    {(item.setsData || [{ id: `${item.id}-legacy`, reps: item.reps || '', weight: item.weight || '', unit: 'lbs' }]).map((set, setIndex) => (
+                      <div key={set.id} className="rounded-2xl border border-white/10 bg-zinc-950 p-3">
+                        <div className="mb-2 flex items-center justify-between">
+                          <p className="text-xs font-black uppercase tracking-wide text-zinc-500">
+                            Set {setIndex + 1}
+                          </p>
+                          {(item.setsData || []).length > 1 && (
+                            <button
+                              onClick={() => removeExerciseSet(item.id, set.id)}
+                              className="text-xs font-bold text-red-300"
+                            >
+                              Borrar set
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Reps</label>
+                            <input
+                              value={set.reps}
+                              onChange={(e) => updateExerciseSet(item.id, set.id, 'reps', e.target.value)}
+                              inputMode="numeric"
+                              placeholder="10"
+                              className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Peso</label>
+                            <input
+                              value={set.weight}
+                              onChange={(e) => updateExerciseSet(item.id, set.id, 'weight', e.target.value)}
+                              inputMode="decimal"
+                              placeholder="135"
+                              className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Unidad</label>
+                            <select
+                              value={set.unit || 'lbs'}
+                              onChange={(e) => updateExerciseSet(item.id, set.id, 'unit', e.target.value)}
+                              className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                            >
+                              <option value="lbs">LBS</option>
+                              <option value="kg">KG</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    <button
+                      onClick={() => addSetToExercise(item.id)}
+                      className="w-full rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-black text-emerald-300 active:scale-95"
+                    >
+                      + Añadir set
+                    </button>
                   </div>
                 </div>
               ))}
