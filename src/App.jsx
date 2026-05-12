@@ -17,6 +17,8 @@ export default function ResetFocusTracker() {
   ];
 
   const muscleGroups = [
+    { name: 'Cardio', emoji: '❤️', exercises: ['Correr', 'Bicicleta', 'Máquina Elíptica', 'StairMaster', 'Caminata Inclinada'] },
+    { name: 'Glúteos', emoji: '🍑', exercises: ['Hip Thrust', 'Glute Bridge', 'Cable Kickback', 'Bulgarian Split Squat', 'Smith Machine Hip Thrust'] },
     { name: 'Pecho', emoji: '🛡️', exercises: ['Bench Press', 'Incline Dumbbell Press', 'Chest Fly', 'Push Ups', 'Dips'] },
     { name: 'Hombros', emoji: '🔺', exercises: ['Shoulder Press', 'Lateral Raises', 'Front Raises', 'Rear Delt Fly', 'Arnold Press'] },
     { name: 'Trapecio', emoji: '⛰️', exercises: ['Shrugs', 'Upright Row', 'Face Pulls', 'Farmer Walk'] },
@@ -29,9 +31,7 @@ export default function ResetFocusTracker() {
     { name: 'Cuádriceps', emoji: '🦵', exercises: ['Squat', 'Leg Press', 'Leg Extension', 'Lunges', 'Hack Squat'] },
     { name: 'Bíceps femoral', emoji: '⚙️', exercises: ['Romanian Deadlift', 'Leg Curl', 'Good Mornings', 'Hip Thrust'] },
     { name: 'Abductores', emoji: '↔️', exercises: ['Hip Abduction Machine', 'Cable Hip Abduction', 'Side Lunges', 'Banded Walks'] },
-    { name: 'Glúteos', emoji: '🍑', exercises: ['Hip Thrust', 'Glute Bridge', 'Cable Kickback', 'Bulgarian Split Squat', 'Smith Machine Hip Thrust'] },
     { name: 'Pantorrilla', emoji: '🐄', exercises: ['Standing Calf Raise', 'Seated Calf Raise', 'Leg Press Calf Raise', 'Single Leg Calf Raise'] },
-    { name: 'Cardio', emoji: '❤️', exercises: ['Correr', 'Bicicleta', 'Máquina Elíptica', 'StairMaster', 'Caminata Inclinada'] },
   ];
 
   const createInitialDays = () =>
@@ -440,20 +440,6 @@ export default function ResetFocusTracker() {
                   ...item,
                   setsData: currentSets.filter((_, index) => index !== setIndex),
                 };
-              }),
-            }
-          : day
-      );
-
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDays));
-      } catch {
-        // Storage unavailable
-      }
-
-      return updatedDays;
-    });
-  };
               }),
             }
           : day
