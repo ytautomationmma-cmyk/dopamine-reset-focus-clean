@@ -19,6 +19,7 @@ export default function ResetFocusTracker() {
       day: i + 1,
       checks: Array(habits.length).fill(false),
       feeling: '🙂 Bien',
+      workout: [],
     }));
 
   const [days, setDays] = useState(() => {
@@ -126,6 +127,80 @@ export default function ResetFocusTracker() {
     setDays((currentDays) => {
       const updatedDays = currentDays.map((day, index) =>
         index === selectedDayIndex ? { ...day, feeling: value } : day
+      );
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDays));
+      } catch {
+        // Storage unavailable
+      }
+
+      return updatedDays;
+    });
+  };
+
+  const addWorkoutExercise = () => {
+    setDays((currentDays) => {
+      const updatedDays = currentDays.map((day, index) =>
+        index === selectedDayIndex
+          ? {
+              ...day,
+              workout: [
+                ...(day.workout || []),
+                {
+                  id: Date.now(),
+                  exercise: '',
+                  sets: '',
+                  reps: '',
+                  weight: '',
+                },
+              ],
+            }
+          : day
+      );
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDays));
+      } catch {
+        // Storage unavailable
+      }
+
+      return updatedDays;
+    });
+  };
+
+  const updateWorkoutExercise = (exerciseId, field, value) => {
+    setDays((currentDays) => {
+      const updatedDays = currentDays.map((day, index) =>
+        index === selectedDayIndex
+          ? {
+              ...day,
+              workout: (day.workout || []).map((item) =>
+                item.id === exerciseId ? { ...item, [field]: value } : item
+              ),
+            }
+          : day
+      );
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDays));
+      } catch {
+        // Storage unavailable
+      }
+
+      return updatedDays;
+    });
+  };
+
+  const removeWorkoutExercise = (exerciseId) => {
+    setDays((currentDays) => {
+      const updatedDays = currentDays.map((day, index) =>
+        index === selectedDayIndex
+          ? {
+              ...day,
+              workout: (day.workout || []).filter((item) => item.id !== exerciseId),
+            }
+          : day
       );
 
       try {
@@ -266,6 +341,90 @@ export default function ResetFocusTracker() {
             })}
           </div>
         </main>
+
+        <section className="mt-5 rounded-[2rem] border border-white/10 bg-zinc-900/80 p-5 shadow-2xl shadow-black/30">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-2xl font-black">🏋️ Workout Log</h2>
+              <p className="text-sm text-zinc-400">
+                Registra ejercicios, sets, reps y peso del Día {selectedDay.day}
+              </p>
+            </div>
+            <button
+              onClick={addWorkoutExercise}
+              className="rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-black text-black active:scale-95"
+            >
+              + Añadir
+            </button>
+          </div>
+
+          {(selectedDay.workout || []).length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-white/10 bg-black/30 p-5 text-center">
+              <p className="text-3xl">💪</p>
+              <p className="mt-2 font-bold">Todavía no registraste ejercicios</p>
+              <p className="mt-1 text-sm text-zinc-400">
+                Añade tu primer ejercicio para medir progreso real en el gimnasio.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {(selectedDay.workout || []).map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-3xl border border-white/10 bg-black/40 p-4"
+                >
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <input
+                      value={item.exercise}
+                      onChange={(e) => updateWorkoutExercise(item.id, 'exercise', e.target.value)}
+                      placeholder="Ejercicio ej: Bench Press"
+                      className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-emerald-400/60"
+                    />
+                    <button
+                      onClick={() => removeWorkoutExercise(item.id)}
+                      className="rounded-2xl border border-red-500/30 bg-red-500/10 px-3 py-3 text-sm font-bold text-red-300"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Sets</label>
+                      <input
+                        value={item.sets}
+                        onChange={(e) => updateWorkoutExercise(item.id, 'sets', e.target.value)}
+                        inputMode="numeric"
+                        placeholder="3"
+                        className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Reps</label>
+                      <input
+                        value={item.reps}
+                        onChange={(e) => updateWorkoutExercise(item.id, 'reps', e.target.value)}
+                        inputMode="numeric"
+                        placeholder="10"
+                        className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Peso</label>
+                      <input
+                        value={item.weight}
+                        onChange={(e) => updateWorkoutExercise(item.id, 'weight', e.target.value)}
+                        inputMode="decimal"
+                        placeholder="135 lb"
+                        className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
         <section className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
           <div className="rounded-3xl border border-white/10 bg-zinc-900/80 p-4">
