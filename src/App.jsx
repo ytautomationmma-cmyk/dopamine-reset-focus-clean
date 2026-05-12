@@ -1008,4 +1008,27 @@ export default function ResetFocusTracker() {
 
                         <div>
                           <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">
-           
+                            Distancia
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              value={item.cardioData?.distance || ''}
+                              onChange={(e) => updateCardioData(item.id, 'distance', e.target.value)}
+                              inputMode="decimal"
+                              placeholder="5"
+                              className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                            />
+                            <select
+                              value={item.cardioData?.distanceUnit || 'km'}
+                              onChange={(e) => updateCardioData(item.id, 'distanceUnit', e.target.value)}
+                              className="rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                            >
+                              <option value="km">KM</option>
+                              <option value="mi">MI</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-3">
+                        <p className="text-xs fon
