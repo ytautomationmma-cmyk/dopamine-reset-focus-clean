@@ -30,6 +30,7 @@ export default function ResetFocusTracker() {
     { name: 'Bíceps femoral', emoji: '⚙️', exercises: ['Romanian Deadlift', 'Leg Curl', 'Good Mornings', 'Hip Thrust'] },
     { name: 'Abductores', emoji: '↔️', exercises: ['Hip Abduction Machine', 'Cable Hip Abduction', 'Side Lunges', 'Banded Walks'] },
     { name: 'Pantorrilla', emoji: '🐄', exercises: ['Standing Calf Raise', 'Seated Calf Raise', 'Leg Press Calf Raise', 'Single Leg Calf Raise'] },
+    { name: 'Cardio', emoji: '❤️', exercises: ['Correr', 'Bicicleta', 'Máquina Elíptica', 'StairMaster', 'Caminata Inclinada'] },
   ];
 
   const createInitialDays = () =>
@@ -293,9 +294,17 @@ export default function ResetFocusTracker() {
                   id: Date.now(),
                   muscle: muscle.name,
                   exercise: exerciseName,
-                  setsData: [
-                    { id: Date.now() + 1, reps: '', weight: '', unit: 'lbs' },
-                  ],
+                  type: muscle.name === 'Cardio' ? 'cardio' : 'strength',
+                  setsData: muscle.name === 'Cardio'
+                    ? []
+                    : [
+                        { id: Date.now() + 1, reps: '', weight: '', unit: 'lbs' },
+                      ],
+                  cardioData: {
+                    time: '',
+                    distance: '',
+                    distanceUnit: 'km',
+                  },
                 },
               ],
             }
@@ -445,6 +454,50 @@ export default function ResetFocusTracker() {
     });
   };
               }),
+            }
+          : day
+      );
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDays));
+      } catch {
+        // Storage unavailable
+      }
+
+      return updatedDays;
+    });
+  };
+
+  const calculatePace = (time, distance) => {
+    const numericTime = parseFloat(time);
+    const numericDistance = parseFloat(distance);
+
+    if (!numericTime || !numericDistance) return null;
+
+    const pace = numericTime / numericDistance;
+    const paceMinutes = Math.floor(pace);
+    const paceSeconds = Math.round((pace - paceMinutes) * 60);
+
+    return `${paceMinutes}:${String(paceSeconds).padStart(2, '0')}`;
+  };
+
+  const updateCardioData = (exerciseId, field, value) => {
+    setDays((currentDays) => {
+      const updatedDays = currentDays.map((day, index) =>
+        index === selectedDayIndex
+          ? {
+              ...day,
+              workout: (day.workout || []).map((item) =>
+                item.id === exerciseId
+                  ? {
+                      ...item,
+                      cardioData: {
+                        ...(item.cardioData || {}),
+                        [field]: value,
+                      },
+                    }
+                  : item
+              ),
             }
           : day
       );
@@ -751,6 +804,59 @@ export default function ResetFocusTracker() {
                     </button>
                   </div>
 
+                  {item.type === 'cardio' ? (
+                    <div className="rounded-2xl border border-white/10 bg-zinc-950 p-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">
+                            Tiempo (min)
+                          </label>
+                          <input
+                            value={item.cardioData?.time || ''}
+                            onChange={(e) => updateCardioData(item.id, 'time', e.target.value)}
+                            inputMode="decimal"
+                            placeholder="30"
+                            className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">
+                            Distancia
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              value={item.cardioData?.distance || ''}
+                              onChange={(e) => updateCardioData(item.id, 'distance', e.target.value)}
+                              inputMode="decimal"
+                              placeholder="5"
+                              className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                            />
+
+                            <select
+                              value={item.cardioData?.distanceUnit || 'km'}
+                              onChange={(e) => updateCardioData(item.id, 'distanceUnit', e.target.value)}
+                              className="rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                            >
+                              <option value="km">KM</option>
+                              <option value="mi">MI</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-3">
+                        <p className="text-xs font-bold uppercase tracking-wide text-emerald-300">
+                          Pace automático
+                        </p>
+                        <p className="mt-1 text-lg font-black text-white">
+                          {calculatePace(item.cardioData?.time, item.cardioData?.distance)
+                            ? `${calculatePace(item.cardioData?.time, item.cardioData?.distance)} min/${item.cardioData?.distanceUnit || 'km'}`
+                            : '--'}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
                   <div className="space-y-2">
                     {(item.setsData || [{ id: `${item.id}-legacy`, reps: item.reps || '', weight: item.weight || '', unit: 'lbs' }]).map((set, setIndex) => (
                       <div key={set.id} className="rounded-2xl border border-white/10 bg-zinc-950 p-3">
@@ -760,38 +866,44 @@ export default function ResetFocusTracker() {
                           </p>
                           {(item.setsData || []).length > 1 && (
                             <button
-                              onClick={() => removeExerciseSet(item.id, set.id)}
+                              onClick={() => removeExerciseSet(item.id, setIndex)}
                               className="text-xs font-bold text-red-300"
                             >
                               Borrar set
-                          <button
-                              onClick={() => removeExerciseSet(item.id, setIndex)}         <div className="grid grid-cols-3 gap-2">
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
                           <div>
                             <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Reps</label>
                             <input
                               value={set.reps}
-                              onChange={(e) => updateExerciseSet(item.id, set.id, 'reps', e.target.value)}
+                              onChange={(e) => updateExerciseSet(item.id, setIndex, 'reps', e.target.value)}
                               inputMode="numeric"
                               placeholder="10"
-                              className="w-full rounded-2xl border border-white/10 bgonChange={(e) => updateExerciseSet(item.id, setIndex, 'reps', e.target.value)}                   />
+                              className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                            />
                           </div>
                           <div>
                             <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Peso</label>
                             <input
                               value={set.weight}
-                              onChange={(e) => updateExerciseSet(item.id, set.id, 'weight', e.target.value)}
+                              onChange={(e) => updateExerciseSet(item.id, setIndex, 'weight', e.target.value)}
                               inputMode="decimal"
                               placeholder="135"
-                              className="w-full rounded-2xl border border-white/10onChange={(e) => updateExerciseSet(item.id, setIndex, 'weight', e.target.value)}                    />
+                              className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                            />
                           </div>
                           <div>
                             <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Unidad</label>
                             <select
                               value={set.unit || 'lbs'}
-                              onChange={(e) => updateExerciseSet(item.id, set.id, 'unit', e.target.value)}
+                              onChange={(e) => updateExerciseSet(item.id, setIndex, 'unit', e.target.value)}
                               className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
                             >
-onChange={(e) => updateExerciseSet(item.id, setIndex, 'unit', e.target.value)}                 <option value="kg">KG</option>
+                              <option value="lbs">LBS</option>
+                              <option value="kg">KG</option>
                             </select>
                           </div>
                         </div>
@@ -805,6 +917,7 @@ onChange={(e) => updateExerciseSet(item.id, setIndex, 'unit', e.target.value)}  
                       + Añadir set
                     </button>
                   </div>
+                  )}
                 </div>
               ))}
             </div>
