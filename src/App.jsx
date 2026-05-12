@@ -77,29 +77,21 @@ export default function ResetFocusTracker() {
   const totalPossible = habits.reduce((sum, habit) => sum + habit.points, 0);
   const progressPercent = Math.round((selectedScore / totalPossible) * 100);
 
-  const getStreakEndingAtSelectedDay = (matcher) => {
-    let streak = 0;
+  const scoresUntilSelectedDay = scores.slice(0, selectedDayIndex + 1);
 
-    for (let i = selectedDayIndex; i >= 0; i -= 1) {
-      if (matcher(scores[i])) streak += 1;
-      else break;
-    }
+  const progressCount = scoresUntilSelectedDay.filter((score) => score >= 8 && score <= 12).length;
+  const eliteCount = scoresUntilSelectedDay.filter((score) => score >= 13).length;
+  const winCount = progressCount + eliteCount;
 
-    return streak;
-  };
-
-  const progressStreak = getStreakEndingAtSelectedDay((score) => score >= 8 && score <= 12);
-  const eliteStreak = getStreakEndingAtSelectedDay((score) => score >= 13);
-  const winStreak = getStreakEndingAtSelectedDay((score) => score >= 8);
   const completedDays = scores.filter((score) => score > 0).length;
   const averageScore = completedDays
     ? Math.round(scores.reduce((sum, score) => sum + score, 0) / completedDays)
     : 0;
 
   let level = '💪 Nivel 1 — Recuperando Control';
-  if (winStreak >= 30) level = '👑 Nivel 4 — Nueva Identidad';
-  else if (winStreak >= 15) level = '⚡ Nivel 3 — Disciplina';
-  else if (winStreak >= 5) level = '🔥 Nivel 2 — Momentum';
+  if (winCount >= 30) level = '👑 Nivel 4 — Nueva Identidad';
+  else if (winCount >= 15) level = '⚡ Nivel 3 — Disciplina';
+  else if (winCount >= 5) level = '🔥 Nivel 2 — Momentum';
 
   const getScoreState = (score) => {
     if (score >= 13) return { emoji: '🔥', label: 'Día élite', color: 'text-emerald-300', ring: 'ring-emerald-400/40', bg: 'bg-emerald-500/10' };
@@ -183,15 +175,15 @@ export default function ResetFocusTracker() {
 
         <section className="mb-5 grid grid-cols-3 gap-3">
           <div className="rounded-3xl border border-white/10 bg-zinc-900/80 p-4">
-            <p className="text-2xl font-black">{winStreak}</p>
-            <p className="text-xs text-zinc-400">🏆 Win Streak</p>
+            <p className="text-2xl font-black">{winCount}</p>
+            <p className="text-xs text-zinc-400">🏆 Wins</p>
           </div>
           <div className="rounded-3xl border border-white/10 bg-zinc-900/80 p-4">
-            <p className="text-2xl font-black">{eliteStreak}</p>
+            <p className="text-2xl font-black">{eliteCount}</p>
             <p className="text-xs text-zinc-400">🔥 Élite</p>
           </div>
           <div className="rounded-3xl border border-white/10 bg-zinc-900/80 p-4">
-            <p className="text-2xl font-black">{progressStreak}</p>
+            <p className="text-2xl font-black">{progressCount}</p>
             <p className="text-xs text-zinc-400">💪 Progreso</p>
           </div>
         </section>
