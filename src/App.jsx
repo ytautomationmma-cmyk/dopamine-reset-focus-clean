@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 export default function ResetFocusTracker() {
   const STORAGE_KEY = 'dopamine-reset-data-v2';
   const SELECTED_DAY_KEY = 'dopamine-reset-selected-day';
+  const CUSTOM_EXERCISES_KEY = 'dopamine-reset-custom-exercises';
 
   const habits = [
     { name: 'Gym 45+ min', icon: '🏋️', points: 3 },
@@ -57,8 +58,18 @@ export default function ResetFocusTracker() {
     }
   });
 
+  const [customExercises, setCustomExercises] = useState(() => {
+    try {
+      const saved = localStorage.getItem(CUSTOM_EXERCISES_KEY);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
   const [selectedMuscle, setSelectedMuscle] = useState('Pecho');
   const [selectedExercise, setSelectedExercise] = useState('Bench Press');
+  const [newExerciseName, setNewExerciseName] = useState('');
 
   useEffect(() => {
     try {
@@ -75,6 +86,14 @@ export default function ResetFocusTracker() {
       // Storage unavailable
     }
   }, [selectedDayIndex]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CUSTOM_EXERCISES_KEY, JSON.stringify(customExercises));
+    } catch {
+      // Storage unavailable
+    }
+  }, [customExercises]);
 
   const resetTracker = () => {
     const confirmed = window.confirm('¿Seguro que quieres reiniciar todo el progreso?');
@@ -158,9 +177,39 @@ export default function ResetFocusTracker() {
     });
   };
 
+  const getExercisesForMuscle = (muscleName) => {
+    const baseMuscle = muscleGroups.find((group) => group.name === muscleName) || muscleGroups[0];
+    const customList = customExercises[muscleName] || [];
+    return [...new Set([...baseMuscle.exercises, ...customList])];
+  };
+
+  const addCustomExercise = () => {
+    const cleanName = newExerciseName.trim();
+    if (!cleanName) return;
+
+    const currentExercises = getExercisesForMuscle(selectedMuscle);
+    const alreadyExists = currentExercises.some(
+      (exercise) => exercise.toLowerCase() === cleanName.toLowerCase()
+    );
+
+    if (alreadyExists) {
+      setSelectedExercise(currentExercises.find((exercise) => exercise.toLowerCase() === cleanName.toLowerCase()) || cleanName);
+      setNewExerciseName('');
+      return;
+    }
+
+    setCustomExercises((current) => ({
+      ...current,
+      [selectedMuscle]: [...(current[selectedMuscle] || []), cleanName],
+    }));
+
+    setSelectedExercise(cleanName);
+    setNewExerciseName('');
+  };
+
   const addWorkoutExercise = () => {
     const muscle = muscleGroups.find((group) => group.name === selectedMuscle) || muscleGroups[0];
-    const exerciseName = selectedExercise || muscle.exercises[0];
+    const exerciseName = selectedExercise || getExercisesForMuscle(muscle.name)[0];
 
     setDays((currentDays) => {
       const updatedDays = currentDays.map((day, index) =>
@@ -193,6 +242,7 @@ export default function ResetFocusTracker() {
   };
 
   const selectedMuscleData = muscleGroups.find((group) => group.name === selectedMuscle) || muscleGroups[0];
+  const selectedMuscleExercises = getExercisesForMuscle(selectedMuscle);
 
   const getExerciseHistory = (exerciseName) => {
     const history = [];
@@ -402,7 +452,8 @@ export default function ResetFocusTracker() {
                     key={group.name}
                     onClick={() => {
                       setSelectedMuscle(group.name);
-                      setSelectedExercise(group.exercises[0]);
+                      const baseExercises = getExercisesForMuscle(group.name);
+                      setSelectedExercise(baseExercises[0]);
                     }}
                     className={`rounded-2xl border p-3 text-left transition active:scale-[0.98] ${
                       active
@@ -426,7 +477,7 @@ export default function ResetFocusTracker() {
                 onChange={(e) => setSelectedExercise(e.target.value)}
                 className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-emerald-400/60"
               >
-                {selectedMuscleData.exercises.map((exercise) => (
+                {selectedMuscleExercises.map((exercise) => (
                   <option key={exercise}>{exercise}</option>
                 ))}
               </select>
@@ -436,6 +487,27 @@ export default function ResetFocusTracker() {
               >
                 + Añadir
               </button>
+            </div>
+
+            <div className="mt-3 rounded-2xl border border-white/10 bg-zinc-950 p-3">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-zinc-500">Agregar ejercicio nuevo</p>
+              <div className="flex gap-2">
+                <input
+                  value={newExerciseName}
+                  onChange={(e) => setNewExerciseName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') addCustomExercise();
+                  }}
+                  placeholder={`Nuevo ejercicio para ${selectedMuscle}`}
+                  className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm outline-none focus:border-emerald-400/60"
+                />
+                <button
+                  onClick={addCustomExercise}
+                  className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 px-4 py-3 text-sm font-black text-emerald-300 active:scale-95"
+                >
+                  Guardar
+                </button>
+              </div>
             </div>
 
             <div className="mt-3 rounded-2xl border border-white/10 bg-zinc-950 p-3">
