@@ -184,55 +184,6 @@ function FitnessIcon({ type, active = false }) {
   return icons[type] || icons.biceps;
 }
 
-export default function ResetFocusTrackerpath d="M24 46c5-4 11-4 16 0" stroke={fill} strokeWidth="6" strokeLinecap="round" />
-        }
-      />
-    ),
-    quads: (
-      <LegFront
-        highlight={
-          <>
-            <path d="M26 12c-2 12-1 24 2 36" stroke={fill} strokeWidth="6" strokeLinecap="round" />
-            <path d="M38 12c2 12 1 24-2 36" stroke={fill} strokeWidth="6" strokeLinecap="round" />
-          </>
-        }
-      />
-    ),
-    hamstrings: (
-      <LegBack
-        highlight={
-          <>
-            <path d="M27 14c-1 10 0 20 3 32" stroke={fill} strokeWidth="6" strokeLinecap="round" />
-            <path d="M37 14c1 10 0 20-3 32" stroke={fill} strokeWidth="6" strokeLinecap="round" />
-          </>
-        }
-      />
-    ),
-    abductors: (
-      <LegFront
-        highlight={
-          <>
-            <path d="M24 20c-4 6-5 14-4 23" stroke={fill} strokeWidth="5" strokeLinecap="round" />
-            <path d="M40 20c4 6 5 14 4 23" stroke={fill} strokeWidth="5" strokeLinecap="round" />
-          </>
-        }
-      />
-    ),
-    calves: (
-      <LegBack
-        highlight={
-          <>
-            <path d="M28 40c-2 6-2 11-1 16" stroke={fill} strokeWidth="6" strokeLinecap="round" />
-            <path d="M36 40c2 6 2 11 1 16" stroke={fill} strokeWidth="6" strokeLinecap="round" />
-          </>
-        }
-      />
-    ),
-  };
-
-  return icons[type] || icons.biceps;
-}
-
 export default function ResetFocusTracker() {
   const STORAGE_KEY = 'dopamine-reset-data-v2';
   const SELECTED_DAY_KEY = 'dopamine-reset-selected-day';
