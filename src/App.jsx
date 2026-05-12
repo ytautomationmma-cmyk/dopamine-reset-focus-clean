@@ -1,128 +1,232 @@
 import { useState, useEffect } from 'react';
 
 function FitnessIcon({ type, active = false }) {
-  const color = active ? '#6ee7b7' : '#d4d4d8';
+  const stroke = active ? '#6ee7b7' : '#e4e4e7';
+  const muted = active ? '#064e3b' : '#18181b';
+  const fill = active ? '#10b981' : '#27272a';
+
+  const Base = ({ children, viewBox = '0 0 64 64' }) => (
+    <svg viewBox={viewBox} className="h-8 w-8" fill="none" aria-hidden="true">
+      {children}
+    </svg>
+  );
+
+  const BodyFront = ({ highlight }) => (
+    <Base>
+      <circle cx="32" cy="9" r="5" stroke={stroke} strokeWidth="3" />
+      <path d="M22 18c3-3 17-3 20 0" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      <path d="M21 19c-4 7-5 18-2 31" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      <path d="M43 19c4 7 5 18 2 31" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      <path d="M26 21c-2 8-2 20 0 31" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      <path d="M38 21c2 8 2 20 0 31" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      {highlight}
+    </Base>
+  );
+
+  const BodyBack = ({ highlight }) => (
+    <Base>
+      <circle cx="32" cy="9" r="5" stroke={stroke} strokeWidth="3" />
+      <path d="M22 18c3-3 17-3 20 0" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      <path d="M21 20c-4 8-5 18-2 31" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      <path d="M43 20c4 8 5 18 2 31" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      <path d="M32 18v35" stroke={stroke} strokeWidth="2" strokeLinecap="round" opacity="0.7" />
+      {highlight}
+    </Base>
+  );
+
+  const LegFront = ({ highlight }) => (
+    <Base>
+      <path d="M24 8c-3 12-2 27 2 48" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      <path d="M40 8c3 12 2 27-2 48" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      <path d="M24 8h16" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      {highlight}
+    </Base>
+  );
+
+  const LegBack = ({ highlight }) => (
+    <Base>
+      <path d="M25 8c-4 14-2 31 3 48" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      <path d="M39 8c4 14 2 31-3 48" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      <path d="M25 8h14" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      {highlight}
+    </Base>
+  );
+
+  const ArmIcon = ({ side = 'front', highlight = 'upper' }) => (
+    <Base>
+      <path d="M20 12c9 2 15 8 17 16" stroke={stroke} strokeWidth="4" strokeLinecap="round" />
+      <path d="M37 28c2 8-2 16-10 21" stroke={stroke} strokeWidth="4" strokeLinecap="round" />
+      <path d="M28 49c-3 2-6 1-8-1" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      {highlight === 'upper' && <path d="M24 16c7 3 11 8 13 14" stroke={fill} strokeWidth="6" strokeLinecap="round" />}
+      {highlight === 'back' && <path d="M38 30c1 6-2 12-7 16" stroke={fill} strokeWidth="6" strokeLinecap="round" />}
+      {highlight === 'forearm' && <path d="M34 33c-1 6-4 11-9 15" stroke={fill} strokeWidth="6" strokeLinecap="round" />}
+    </Base>
+  );
 
   const icons = {
     cardio: (
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" />
-        <path d="M3 12h4l2-4 3 8 2-4h7" />
-      </svg>
+      <Base>
+        <path d="M51 16c-5-6-14-5-19 2-5-7-14-8-19-2-6 7-2 17 5 24l14 14 14-14c7-7 11-17 5-24Z" stroke={stroke} strokeWidth="3" strokeLinejoin="round" />
+        <path d="M11 33h10l4-8 7 18 5-10h16" stroke={fill} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+      </Base>
     ),
     glutes: (
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M8 4c-2 3-3 6-3 9 0 4 2 7 5 7 2 0 3-2 3-5" />
-        <path d="M16 4c2 3 3 6 3 9 0 4-2 7-5 7-2 0-3-2-3-5" />
-        <path d="M12 5v10" />
-      </svg>
+      <BodyBack
+        highlight={
+          <>
+            <path d="M22 36c2-7 8-9 10-3" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+            <path d="M42 36c-2-7-8-9-10-3" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+          </>
+        }
+      />
     ),
     chest: (
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M6 5c2 1 4 2 6 2s4-1 6-2" />
-        <path d="M5 7c-1 3-1 8 1 12" />
-        <path d="M19 7c1 3 1 8-1 12" />
-        <path d="M12 7v12" />
-        <path d="M7 11c2-1 3-1 5 0" />
-        <path d="M12 11c2-1 3-1 5 0" />
-      </svg>
+      <BodyFront
+        highlight={
+          <>
+            <path d="M22 25c5-5 10-5 10 1" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+            <path d="M42 25c-5-5-10-5-10 1" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+          </>
+        }
+      />
     ),
     shoulders: (
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="5" r="2" />
-        <path d="M6 10c2-2 10-2 12 0" />
-        <path d="M4 12c2 1 3 3 3 6" />
-        <path d="M20 12c-2 1-3 3-3 6" />
-        <path d="M8 12h8" />
-      </svg>
+      <BodyFront
+        highlight={
+          <>
+            <circle cx="20" cy="22" r="5" fill={fill} />
+            <circle cx="44" cy="22" r="5" fill={fill} />
+          </>
+        }
+      />
     ),
     traps: (
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 4v4" />
-        <path d="M7 8c1 4 3 6 5 6s4-2 5-6" />
-        <path d="M5 20c1-5 3-8 7-8s6 3 7 8" />
-      </svg>
+      <BodyBack
+        highlight={
+          <>
+            <path d="M25 18l7 10 7-10" stroke={fill} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+          </>
+        }
+      />
     ),
-    biceps: (
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M7 15c2-5 6-8 10-6" />
-        <path d="M10 19c4 1 8-1 9-5" />
-        <path d="M7 15l-3 3" />
-        <path d="M17 9l3-3" />
-        <path d="M9 13c2 2 5 2 7 0" />
-      </svg>
-    ),
-    triceps: (
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M5 7h7c4 0 7 3 7 7" />
-        <path d="M5 17h7c4 0 7-3 7-7" />
-        <path d="M12 7v10" />
-      </svg>
-    ),
-    forearm: (
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M8 20c2-6 4-10 8-15" />
-        <path d="M12 21c1-5 3-9 6-14" />
-        <path d="M6 18h8" />
-        <path d="M16 5l3-2" />
-      </svg>
-    ),
+    biceps: <ArmIcon highlight="upper" />,
+    triceps: <ArmIcon highlight="back" />,
+    forearm: <ArmIcon highlight="forearm" />,
     back: (
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="4" r="2" />
-        <path d="M7 8c1 7 2 11 5 13" />
-        <path d="M17 8c-1 7-2 11-5 13" />
-        <path d="M8 10h8" />
-        <path d="M9 14h6" />
-      </svg>
+      <BodyBack
+        highlight={
+          <>
+            <path d="M24 24c-4 8-5 16-3 25" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+            <path d="M40 24c4 8 5 16 3 25" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+          </>
+        }
+      />
     ),
     abs: (
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M8 4h8v16H8z" />
-        <path d="M8 9h8" />
-        <path d="M8 14h8" />
-        <path d="M12 4v16" />
-      </svg>
+      <BodyFront
+        highlight={
+          <>
+            <rect x="27" y="25" width="10" height="24" rx="3" fill={muted} stroke={fill} strokeWidth="3" />
+            <path d="M27 33h10M27 41h10M32 25v24" stroke={fill} strokeWidth="2" />
+          </>
+        }
+      />
     ),
     lowerback: (
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 3v18" />
-        <path d="M8 8c2 2 6 2 8 0" />
-        <path d="M7 14c3 3 7 3 10 0" />
-        <path d="M9 19c2 1 4 1 6 0" />
-      </svg>
+      <BodyBack
+        highlight={
+          <path d="M24 46c5-4 11-4 16 0" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+        }
+      />
     ),
     quads: (
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 3c3 4 3 9 2 18" />
-        <path d="M15 3c-2 5-2 10 0 18" />
-        <path d="M8 11h8" />
-      </svg>
+      <LegFront
+        highlight={
+          <>
+            <path d="M26 12c-2 12-1 24 2 36" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+            <path d="M38 12c2 12 1 24-2 36" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+          </>
+        }
+      />
     ),
     hamstrings: (
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 3c-1 6 0 12 3 18" />
-        <path d="M15 3c1 6 0 12-3 18" />
-        <path d="M9 15h6" />
-      </svg>
+      <LegBack
+        highlight={
+          <>
+            <path d="M27 14c-1 10 0 20 3 32" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+            <path d="M37 14c1 10 0 20-3 32" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+          </>
+        }
+      />
     ),
     abductors: (
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M8 4c2 4 2 10 0 16" />
-        <path d="M16 4c-2 4-2 10 0 16" />
-        <path d="M5 12h14" />
-        <path d="M5 12l3-3" />
-        <path d="M5 12l3 3" />
-        <path d="M19 12l-3-3" />
-        <path d="M19 12l-3 3" />
-      </svg>
+      <LegFront
+        highlight={
+          <>
+            <path d="M24 20c-4 6-5 14-4 23" stroke={fill} strokeWidth="5" strokeLinecap="round" />
+            <path d="M40 20c4 6 5 14 4 23" stroke={fill} strokeWidth="5" strokeLinecap="round" />
+          </>
+        }
+      />
     ),
     calves: (
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10 3c-1 6 1 10 4 14" />
-        <path d="M15 8c-3 2-4 6-2 13" />
-        <path d="M9 21h7" />
-      </svg>
+      <LegBack
+        highlight={
+          <>
+            <path d="M28 40c-2 6-2 11-1 16" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+            <path d="M36 40c2 6 2 11 1 16" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+          </>
+        }
+      />
+    ),
+  };
+
+  return icons[type] || icons.biceps;
+}
+
+export default function ResetFocusTrackerpath d="M24 46c5-4 11-4 16 0" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+        }
+      />
+    ),
+    quads: (
+      <LegFront
+        highlight={
+          <>
+            <path d="M26 12c-2 12-1 24 2 36" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+            <path d="M38 12c2 12 1 24-2 36" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+          </>
+        }
+      />
+    ),
+    hamstrings: (
+      <LegBack
+        highlight={
+          <>
+            <path d="M27 14c-1 10 0 20 3 32" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+            <path d="M37 14c1 10 0 20-3 32" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+          </>
+        }
+      />
+    ),
+    abductors: (
+      <LegFront
+        highlight={
+          <>
+            <path d="M24 20c-4 6-5 14-4 23" stroke={fill} strokeWidth="5" strokeLinecap="round" />
+            <path d="M40 20c4 6 5 14 4 23" stroke={fill} strokeWidth="5" strokeLinecap="round" />
+          </>
+        }
+      />
+    ),
+    calves: (
+      <LegBack
+        highlight={
+          <>
+            <path d="M28 40c-2 6-2 11-1 16" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+            <path d="M36 40c2 6 2 11 1 16" stroke={fill} strokeWidth="6" strokeLinecap="round" />
+          </>
+        }
+      />
     ),
   };
 
@@ -953,125 +1057,4 @@ export default function ResetFocusTracker() {
 
                         <div>
                           <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">
-                            Distancia
-                          </label>
-                          <div className="flex gap-2">
-                            <input
-                              value={item.cardioData?.distance || ''}
-                              onChange={(e) => updateCardioData(item.id, 'distance', e.target.value)}
-                              inputMode="decimal"
-                              placeholder="5"
-                              className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
-                            />
-
-                            <select
-                              value={item.cardioData?.distanceUnit || 'km'}
-                              onChange={(e) => updateCardioData(item.id, 'distanceUnit', e.target.value)}
-                              className="rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
-                            >
-                              <option value="km">KM</option>
-                              <option value="mi">MI</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-3">
-                        <p className="text-xs font-bold uppercase tracking-wide text-emerald-300">
-                          Pace automático
-                        </p>
-                        <p className="mt-1 text-lg font-black text-white">
-                          {calculatePace(item.cardioData?.time, item.cardioData?.distance)
-                            ? `${calculatePace(item.cardioData?.time, item.cardioData?.distance)} min/${item.cardioData?.distanceUnit || 'km'}`
-                            : '--'}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {(item.setsData || [{ id: `${item.id}-legacy`, reps: item.reps || '', weight: item.weight || '', unit: 'lbs' }]).map((set, setIndex) => (
-                        <div key={`${item.id}-${setIndex}`} className="rounded-2xl border border-white/10 bg-zinc-950 p-3">
-                          <div className="mb-2 flex items-center justify-between">
-                            <p className="text-xs font-black uppercase tracking-wide text-zinc-500">
-                              Set {setIndex + 1}
-                            </p>
-                            {(item.setsData || []).length > 1 && (
-                              <button
-                                onClick={() => removeExerciseSet(item.id, setIndex)}
-                                className="text-xs font-bold text-red-300"
-                              >
-                                Borrar set
-                              </button>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-3 gap-2">
-                            <div>
-                              <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Reps</label>
-                              <input
-                                value={set.reps}
-                                onChange={(e) => updateExerciseSet(item.id, setIndex, 'reps', e.target.value)}
-                                inputMode="numeric"
-                                placeholder="10"
-                                className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
-                              />
-                            </div>
-                            <div>
-                              <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Peso</label>
-                              <input
-                                value={set.weight}
-                                onChange={(e) => updateExerciseSet(item.id, setIndex, 'weight', e.target.value)}
-                                inputMode="decimal"
-                                placeholder="135"
-                                className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
-                              />
-                            </div>
-                            <div>
-                              <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Unidad</label>
-                              <select
-                                value={set.unit || 'lbs'}
-                                onChange={(e) => updateExerciseSet(item.id, setIndex, 'unit', e.target.value)}
-                                className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
-                              >
-                                <option value="lbs">LBS</option>
-                                <option value="kg">KG</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-
-                      <button
-                        onClick={() => addSetToExercise(item.id)}
-                        className="w-full rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-black text-emerald-300 active:scale-95"
-                      >
-                        + Añadir set
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
-          <div className="rounded-3xl border border-white/10 bg-zinc-900/80 p-4">
-            <h3 className="mb-2 font-bold">🧠 Mentalidad</h3>
-            <p className="text-sm text-zinc-400">La meta no es perfección. La meta es control.</p>
-          </div>
-          <div className="rounded-3xl border border-white/10 bg-zinc-900/80 p-4">
-            <h3 className="mb-2 font-bold">🔥 Score</h3>
-            <p className="text-sm text-zinc-400">🔥 13–15 élite · 💪 8–12 progreso · 🧭 menos de 8 recalibrar.</p>
-          </div>
-          <button
-            onClick={resetTracker}
-            className="rounded-3xl border border-red-500/30 bg-red-500/10 p-4 text-left text-sm font-bold text-red-300"
-          >
-            Reiniciar progreso
-          </button>
-        </section>
-      </div>
-    </div>
-  );
-}
+           
