@@ -456,12 +456,25 @@ export default function ResetFocusTracker() {
   };
 
   const calculatePace = (time, distance) => {
-    const numericTime = parseFloat(time);
+    if (!time || !distance) return null;
+
+    const timeParts = String(time).split(':');
+
+    let totalMinutes = 0;
+
+    if (timeParts.length === 2) {
+      const minutes = parseInt(timeParts[0], 10) || 0;
+      const seconds = parseInt(timeParts[1], 10) || 0;
+      totalMinutes = minutes + seconds / 60;
+    } else {
+      totalMinutes = parseFloat(time);
+    }
+
     const numericDistance = parseFloat(distance);
 
-    if (!numericTime || !numericDistance) return null;
+    if (!totalMinutes || !numericDistance) return null;
 
-    const pace = numericTime / numericDistance;
+    const pace = totalMinutes / numericDistance;
     const paceMinutes = Math.floor(pace);
     const paceSeconds = Math.round((pace - paceMinutes) * 60);
 
@@ -801,8 +814,8 @@ export default function ResetFocusTracker() {
                           <input
                             value={item.cardioData?.time || ''}
                             onChange={(e) => updateCardioData(item.id, 'time', e.target.value)}
-                            inputMode="decimal"
-                            placeholder="30"
+                            inputMode="text"
+                            placeholder="18:33"
                             className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
                           />
                         </div>
