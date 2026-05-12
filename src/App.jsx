@@ -961,4 +961,117 @@ export default function ResetFocusTracker() {
                               onChange={(e) => updateCardioData(item.id, 'distance', e.target.value)}
                               inputMode="decimal"
                               placeholder="5"
-                
+                              className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                            />
+
+                            <select
+                              value={item.cardioData?.distanceUnit || 'km'}
+                              onChange={(e) => updateCardioData(item.id, 'distanceUnit', e.target.value)}
+                              className="rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                            >
+                              <option value="km">KM</option>
+                              <option value="mi">MI</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-3">
+                        <p className="text-xs font-bold uppercase tracking-wide text-emerald-300">
+                          Pace automático
+                        </p>
+                        <p className="mt-1 text-lg font-black text-white">
+                          {calculatePace(item.cardioData?.time, item.cardioData?.distance)
+                            ? `${calculatePace(item.cardioData?.time, item.cardioData?.distance)} min/${item.cardioData?.distanceUnit || 'km'}`
+                            : '--'}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {(item.setsData || [{ id: `${item.id}-legacy`, reps: item.reps || '', weight: item.weight || '', unit: 'lbs' }]).map((set, setIndex) => (
+                        <div key={`${item.id}-${setIndex}`} className="rounded-2xl border border-white/10 bg-zinc-950 p-3">
+                          <div className="mb-2 flex items-center justify-between">
+                            <p className="text-xs font-black uppercase tracking-wide text-zinc-500">
+                              Set {setIndex + 1}
+                            </p>
+                            {(item.setsData || []).length > 1 && (
+                              <button
+                                onClick={() => removeExerciseSet(item.id, setIndex)}
+                                className="text-xs font-bold text-red-300"
+                              >
+                                Borrar set
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Reps</label>
+                              <input
+                                value={set.reps}
+                                onChange={(e) => updateExerciseSet(item.id, setIndex, 'reps', e.target.value)}
+                                inputMode="numeric"
+                                placeholder="10"
+                                className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Peso</label>
+                              <input
+                                value={set.weight}
+                                onChange={(e) => updateExerciseSet(item.id, setIndex, 'weight', e.target.value)}
+                                inputMode="decimal"
+                                placeholder="135"
+                                className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Unidad</label>
+                              <select
+                                value={set.unit || 'lbs'}
+                                onChange={(e) => updateExerciseSet(item.id, setIndex, 'unit', e.target.value)}
+                                className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"
+                              >
+                                <option value="lbs">LBS</option>
+                                <option value="kg">KG</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      <button
+                        onClick={() => addSetToExercise(item.id)}
+                        className="w-full rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-black text-emerald-300 active:scale-95"
+                      >
+                        + Añadir set
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="rounded-3xl border border-white/10 bg-zinc-900/80 p-4">
+            <h3 className="mb-2 font-bold">🧠 Mentalidad</h3>
+            <p className="text-sm text-zinc-400">La meta no es perfección. La meta es control.</p>
+          </div>
+          <div className="rounded-3xl border border-white/10 bg-zinc-900/80 p-4">
+            <h3 className="mb-2 font-bold">🔥 Score</h3>
+            <p className="text-sm text-zinc-400">🔥 13–15 élite · 💪 8–12 progreso · 🧭 menos de 8 recalibrar.</p>
+          </div>
+          <button
+            onClick={resetTracker}
+            className="rounded-3xl border border-red-500/30 bg-red-500/10 p-4 text-left text-sm font-bold text-red-300"
+          >
+            Reiniciar progreso
+          </button>
+        </section>
+      </div>
+    </div>
+  );
+}
