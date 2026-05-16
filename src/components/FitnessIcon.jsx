@@ -1,19 +1,35 @@
+import abductorsImage from '../assets/muscles/abductors.png';
+import absImage from '../assets/muscles/abs.png';
+import backImage from '../assets/muscles/back.png';
+import bicepsImage from '../assets/muscles/biceps.png';
+import calvesImage from '../assets/muscles/calves.png';
+import cardioImage from '../assets/muscles/cardio.png';
+import chestImage from '../assets/muscles/chest.png';
+import forearmImage from '../assets/muscles/forearm.png';
+import glutesImage from '../assets/muscles/glutes.png';
+import hamstringsImage from '../assets/muscles/hamstrings.png';
+import lowerbackImage from '../assets/muscles/lowerback.png';
+import quadsImage from '../assets/muscles/quads.png';
+import shouldersImage from '../assets/muscles/shoulders.png';
+import trapsImage from '../assets/muscles/traps.png';
+import tricepsImage from '../assets/muscles/triceps.png';
+
 const muscleImages = {
-  cardio: '/src/assets/muscles/cardio.png',
-  glutes: '/src/assets/muscles/glutes.png',
-  chest: '/src/assets/muscles/chest.png',
-  shoulders: '/src/assets/muscles/shoulders.png',
-  traps: '/src/assets/muscles/traps.png',
-  biceps: '/src/assets/muscles/biceps.png',
-  triceps: '/src/assets/muscles/triceps.png',
-  forearm: '/src/assets/muscles/forearm.png',
-  back: '/src/assets/muscles/back.png',
-  abs: '/src/assets/muscles/abs.png',
-  lowerback: '/src/assets/muscles/lowerback.png',
-  quads: '/src/assets/muscles/quads.png',
-  hamstrings: '/src/assets/muscles/hamstrings.png',
-  abductors: '/src/assets/muscles/abductors.png',
-  calves: '/src/assets/muscles/calves.png',
+  cardio: cardioImage,
+  glutes: glutesImage,
+  chest: chestImage,
+  shoulders: shouldersImage,
+  traps: trapsImage,
+  biceps: bicepsImage,
+  triceps: tricepsImage,
+  forearm: forearmImage,
+  back: backImage,
+  abs: absImage,
+  lowerback: lowerbackImage,
+  quads: quadsImage,
+  hamstrings: hamstringsImage,
+  abductors: abductorsImage,
+  calves: calvesImage,
 };
 
 export default function FitnessIcon({ type, active = false }) {
