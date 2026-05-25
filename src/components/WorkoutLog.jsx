@@ -1,5 +1,15 @@
 import FitnessIcon from './FitnessIcon.jsx';
 
+const getTrackingType = (item) => {
+  if (item.type === 'cardio') return 'cardio';
+  if (item.trackingType) return item.trackingType;
+  if (item.muscle !== 'Abdominales') return 'weighted';
+  const normalized = String(item.exercise || '').toLowerCase();
+  if (normalized.includes('plank') || normalized.includes('plancha') || normalized.includes('hold')) return 'time';
+  if (normalized.includes('cable') || normalized.includes('machine') || normalized.includes('weighted')) return 'weighted';
+  return 'reps';
+};
+
 export default function WorkoutLog(props) {
   const {
     selectedDay, selectedMuscle, setSelectedMuscle, selectedExercise, setSelectedExercise,
@@ -67,6 +77,7 @@ function ExercisePicker({ selectedMuscle, selectedExercise, setSelectedExercise,
 
 function LastExerciseSummary({ entry }) {
   const sets = entry.setsData?.length ? entry.setsData : [{ reps: entry.reps || '', weight: entry.weight || '', unit: 'lbs' }];
+  const trackingType = getTrackingType(entry);
 
   if (entry.type === 'cardio') {
     const time = entry.cardioData?.time || '--';
@@ -87,6 +98,12 @@ function LastExerciseSummary({ entry }) {
       <p className="font-bold text-zinc-200">Última vez: Día {entry.day}</p>
       <div className="space-y-1 rounded-2xl border border-white/10 bg-black/40 p-3">
         {sets.map((set, index) => {
+          if (trackingType === 'time') {
+            return <p key={set.id || index} className="text-xs text-zinc-300"><span className="font-bold text-emerald-300">Set {index + 1}:</span> {set.duration || set.time || '--'} tiempo</p>;
+          }
+          if (trackingType === 'reps') {
+            return <p key={set.id || index} className="text-xs text-zinc-300"><span className="font-bold text-emerald-300">Set {index + 1}:</span> {set.reps || '--'} reps</p>;
+          }
           const reps = set.reps || '--';
           const weight = set.weight ? `${set.weight} ${set.unit || 'lbs'}` : '--';
           return <p key={set.id || index} className="text-xs text-zinc-300"><span className="font-bold text-emerald-300">Set {index + 1}:</span> {reps} reps · {weight}</p>;
@@ -115,6 +132,8 @@ function CardioEntry({ item, updateCardioData, calculatePace }) {
 }
 
 function StrengthEntry({ item, updateExerciseSet, removeExerciseSet, addSetToExercise }) {
-  const sets = item.setsData?.length ? item.setsData : [{ id: `${item.id}-legacy`, reps: item.reps || '', weight: item.weight || '', unit: 'lbs' }];
-  return <div className="space-y-2">{sets.map((set, setIndex) => <div key={`${item.id}-${set.id || setIndex}`} className="rounded-2xl border border-white/10 bg-zinc-950 p-3"><div className="mb-2 flex items-center justify-between"><p className="text-xs font-black uppercase tracking-wide text-zinc-500">Set {setIndex + 1}</p>{sets.length > 1 && <button onClick={() => removeExerciseSet(item.id, setIndex)} className="text-xs font-bold text-red-300">Borrar set</button>}</div><div className="grid grid-cols-3 gap-2"><div><label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Reps</label><input value={set.reps} onChange={(e) => updateExerciseSet(item.id, setIndex, 'reps', e.target.value)} inputMode="numeric" placeholder="10" className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60" /></div><div><label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Peso</label><input value={set.weight} onChange={(e) => updateExerciseSet(item.id, setIndex, 'weight', e.target.value)} inputMode="decimal" placeholder="135" className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60" /></div><div><label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Unidad</label><select value={set.unit || 'lbs'} onChange={(e) => updateExerciseSet(item.id, setIndex, 'unit', e.target.value)} className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"><option value="lbs">LBS</option><option value="kg">KG</option></select></div></div></div>)}<button onClick={() => addSetToExercise(item.id)} className="w-full rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-black text-emerald-300 active:scale-95">+ Añadir set</button></div>;
+  const trackingType = getTrackingType(item);
+  const sets = item.setsData?.length ? item.setsData : [{ id: `${item.id}-legacy`, reps: item.reps || '', weight: item.weight || '', unit: 'lbs', duration: '' }];
+
+  return <div className="space-y-2">{sets.map((set, setIndex) => <div key={`${item.id}-${set.id || setIndex}`} className="rounded-2xl border border-white/10 bg-zinc-950 p-3"><div className="mb-2 flex items-center justify-between"><p className="text-xs font-black uppercase tracking-wide text-zinc-500">Set {setIndex + 1}</p>{sets.length > 1 && <button onClick={() => removeExerciseSet(item.id, setIndex)} className="text-xs font-bold text-red-300">Borrar set</button>}</div>{trackingType === 'time' ? <div><label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Tiempo</label><input value={set.duration || ''} onChange={(e) => updateExerciseSet(item.id, setIndex, 'duration', e.target.value)} inputMode="text" placeholder="45s o 1:30" className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60" /></div> : trackingType === 'reps' ? <div><label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Reps</label><input value={set.reps || ''} onChange={(e) => updateExerciseSet(item.id, setIndex, 'reps', e.target.value)} inputMode="numeric" placeholder="20" className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60" /></div> : <div className="grid grid-cols-3 gap-2"><div><label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Reps</label><input value={set.reps || ''} onChange={(e) => updateExerciseSet(item.id, setIndex, 'reps', e.target.value)} inputMode="numeric" placeholder="10" className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60" /></div><div><label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Peso</label><input value={set.weight || ''} onChange={(e) => updateExerciseSet(item.id, setIndex, 'weight', e.target.value)} inputMode="decimal" placeholder="135" className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60" /></div><div><label className="mb-1 block text-xs font-bold uppercase text-zinc-500">Unidad</label><select value={set.unit || 'lbs'} onChange={(e) => updateExerciseSet(item.id, setIndex, 'unit', e.target.value)} className="w-full rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none focus:border-emerald-400/60"><option value="lbs">LBS</option><option value="kg">KG</option></select></div></div>}</div>)}<button onClick={() => addSetToExercise(item.id)} className="w-full rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-black text-emerald-300 active:scale-95">+ Añadir set</button></div>;
 }

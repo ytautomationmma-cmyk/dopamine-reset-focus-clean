@@ -23,6 +23,19 @@ const createInitialDays = () => Array.from({ length: 30 }, (_, i) => ({ day: i +
 const safeLoad = (key, fallback) => { try { const saved = localStorage.getItem(key); return saved ? JSON.parse(saved) : fallback; } catch { return fallback; } };
 const safeSave = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
 const parseDecimalInput = (value) => parseFloat(String(value).trim().replace(',', '.'));
+const getExerciseTrackingType = (muscleName, exerciseName) => {
+  if (muscleName === 'Cardio') return 'cardio';
+  if (muscleName !== 'Abdominales') return 'weighted';
+  const normalized = String(exerciseName || '').toLowerCase();
+  if (normalized.includes('plank') || normalized.includes('plancha') || normalized.includes('hold')) return 'time';
+  if (normalized.includes('cable') || normalized.includes('machine') || normalized.includes('weighted')) return 'weighted';
+  return 'reps';
+};
+const createInitialSet = (trackingType, unit = 'lbs') => {
+  if (trackingType === 'time') return { id: Date.now() + Math.random(), duration: '' };
+  if (trackingType === 'reps') return { id: Date.now() + Math.random(), reps: '' };
+  return { id: Date.now() + Math.random(), reps: '', weight: '', unit };
+};
 const normalizeDays = (loadedDays) => {
   const fallback = createInitialDays();
   if (!Array.isArray(loadedDays)) return fallback;
@@ -121,10 +134,10 @@ export default function ResetFocusTracker() {
     setSelectedExercise(clean); setRenameExerciseName('');
   };
   const addCustomExercise = () => { const clean = newExerciseName.trim(); if (!clean) return; const current = getExercisesForMuscle(selectedMuscle); const existing = current.find((ex) => ex.toLowerCase() === clean.toLowerCase()); if (existing) { setSelectedExercise(existing); setNewExerciseName(''); return; } setCustomExercises((cur) => ({ ...cur, [selectedMuscle]: [...(cur[selectedMuscle] || []), clean] })); setSelectedExercise(clean); setNewExerciseName(''); };
-  const addWorkoutExercise = () => { const muscle = muscleGroups.find((g) => g.name === selectedMuscle) || muscleGroups[0]; const isCardio = muscle.name === 'Cardio'; const exerciseName = selectedExercise || getExercisesForMuscle(muscle.name)[0]; setDaysAndSave((current) => current.map((day, index) => index === selectedDayIndex ? { ...day, workout: [{ id: Date.now() + Math.random(), muscle: muscle.name, exercise: exerciseName, type: isCardio ? 'cardio' : 'strength', setsData: isCardio ? [] : [{ id: Date.now() + Math.random(), reps: '', weight: '', unit: 'lbs' }], cardioData: { time: '', distance: '', distanceUnit: 'km' } }, ...(day.workout || [])] } : day)); };
-  const getExerciseHistory = (exerciseName) => { const history = []; days.forEach((day) => (day.workout || []).forEach((item) => { const strength = (item.setsData || []).some((set) => set.reps || set.weight); const cardio = item.cardioData?.time || item.cardioData?.distance; if (item.exercise === exerciseName && (strength || cardio)) history.push({ day: day.day, ...item }); })); return history; };
+  const addWorkoutExercise = () => { const muscle = muscleGroups.find((g) => g.name === selectedMuscle) || muscleGroups[0]; const exerciseName = selectedExercise || getExercisesForMuscle(muscle.name)[0]; const trackingType = getExerciseTrackingType(muscle.name, exerciseName); setDaysAndSave((current) => current.map((day, index) => index === selectedDayIndex ? { ...day, workout: [{ id: Date.now() + Math.random(), muscle: muscle.name, exercise: exerciseName, type: trackingType === 'cardio' ? 'cardio' : 'strength', trackingType, setsData: trackingType === 'cardio' ? [] : [createInitialSet(trackingType)], cardioData: { time: '', distance: '', distanceUnit: 'km' } }, ...(day.workout || [])] } : day)); };
+  const getExerciseHistory = (exerciseName) => { const history = []; days.forEach((day) => (day.workout || []).forEach((item) => { const strength = (item.setsData || []).some((set) => set.reps || set.weight || set.duration); const cardio = item.cardioData?.time || item.cardioData?.distance; if (item.exercise === exerciseName && (strength || cardio)) history.push({ day: day.day, ...item }); })); return history; };
   const lastExerciseEntry = getExerciseHistory(selectedExercise).at(-1);
-  const addSetToExercise = (exerciseId) => setDaysAndSave((current) => current.map((day, dayIndex) => dayIndex === selectedDayIndex ? { ...day, workout: (day.workout || []).map((item) => { if (item.id !== exerciseId) return item; const currentSets = item.setsData?.length ? item.setsData : [{ id: Date.now() + Math.random(), reps: '', weight: '', unit: 'lbs' }]; return { ...item, setsData: [...currentSets, { id: Date.now() + Math.random(), reps: '', weight: '', unit: currentSets.at(-1)?.unit || 'lbs' }] }; }) } : day));
+  const addSetToExercise = (exerciseId) => setDaysAndSave((current) => current.map((day, dayIndex) => dayIndex === selectedDayIndex ? { ...day, workout: (day.workout || []).map((item) => { if (item.id !== exerciseId) return item; const trackingType = item.trackingType || getExerciseTrackingType(item.muscle, item.exercise); const currentSets = item.setsData?.length ? item.setsData : [createInitialSet(trackingType)]; return { ...item, trackingType, setsData: [...currentSets, createInitialSet(trackingType, currentSets.at(-1)?.unit || 'lbs')] }; }) } : day));
   const updateExerciseSet = (exerciseId, setIndex, field, value) => setDaysAndSave((current) => current.map((day, dayIndex) => dayIndex === selectedDayIndex ? { ...day, workout: (day.workout || []).map((item) => item.id === exerciseId ? { ...item, setsData: (item.setsData || []).map((set, index) => index === setIndex ? { ...set, [field]: value } : set) } : item) } : day));
   const removeExerciseSet = (exerciseId, setIndex) => setDaysAndSave((current) => current.map((day, dayIndex) => dayIndex === selectedDayIndex ? { ...day, workout: (day.workout || []).map((item) => item.id !== exerciseId ? item : { ...item, setsData: (item.setsData || []).length <= 1 ? item.setsData : item.setsData.filter((_, index) => index !== setIndex) }) } : day));
   const updateCardioData = (exerciseId, field, value) => setDaysAndSave((current) => current.map((day, dayIndex) => dayIndex === selectedDayIndex ? { ...day, workout: (day.workout || []).map((item) => item.id === exerciseId ? { ...item, cardioData: { ...(item.cardioData || {}), [field]: value } } : item) } : day));
