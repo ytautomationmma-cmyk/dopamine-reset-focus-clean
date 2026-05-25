@@ -29,11 +29,11 @@ const getExerciseTrackingType = (muscleName, exerciseName) => {
   const normalized = String(exerciseName || '').toLowerCase();
   if (normalized.includes('plank') || normalized.includes('plancha') || normalized.includes('hold')) return 'time';
   if (normalized.includes('cable') || normalized.includes('machine') || normalized.includes('weighted')) return 'weighted';
-  return 'reps';
+  return 'bodyweight';
 };
 const createInitialSet = (trackingType, unit = 'lbs') => {
   if (trackingType === 'time') return { id: Date.now() + Math.random(), duration: '' };
-  if (trackingType === 'reps') return { id: Date.now() + Math.random(), reps: '' };
+  if (trackingType === 'bodyweight') return { id: Date.now() + Math.random(), reps: '', weightMode: 'none', weight: '', unit };
   return { id: Date.now() + Math.random(), reps: '', weight: '', unit };
 };
 const normalizeDays = (loadedDays) => {
