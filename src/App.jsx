@@ -22,6 +22,7 @@ const tabs = [
 const createInitialDays = () => Array.from({ length: 30 }, (_, i) => ({ day: i + 1, checks: Array(habits.length).fill(false), feeling: '🙂 Bien', workout: [] }));
 const safeLoad = (key, fallback) => { try { const saved = localStorage.getItem(key); return saved ? JSON.parse(saved) : fallback; } catch { return fallback; } };
 const safeSave = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
+const parseDecimalInput = (value) => parseFloat(String(value).trim().replace(',', '.'));
 const normalizeDays = (loadedDays) => {
   const fallback = createInitialDays();
   if (!Array.isArray(loadedDays)) return fallback;
@@ -128,7 +129,20 @@ export default function ResetFocusTracker() {
   const removeExerciseSet = (exerciseId, setIndex) => setDaysAndSave((current) => current.map((day, dayIndex) => dayIndex === selectedDayIndex ? { ...day, workout: (day.workout || []).map((item) => item.id !== exerciseId ? item : { ...item, setsData: (item.setsData || []).length <= 1 ? item.setsData : item.setsData.filter((_, index) => index !== setIndex) }) } : day));
   const updateCardioData = (exerciseId, field, value) => setDaysAndSave((current) => current.map((day, dayIndex) => dayIndex === selectedDayIndex ? { ...day, workout: (day.workout || []).map((item) => item.id === exerciseId ? { ...item, cardioData: { ...(item.cardioData || {}), [field]: value } } : item) } : day));
   const removeWorkoutExercise = (exerciseId) => setDaysAndSave((current) => current.map((day, index) => index === selectedDayIndex ? { ...day, workout: (day.workout || []).filter((item) => item.id !== exerciseId) } : day));
-  const calculatePace = (time, distance) => { if (!time || !distance) return null; const parts = String(time).split(':'); const totalMinutes = parts.length === 2 ? (parseInt(parts[0], 10) || 0) + (parseInt(parts[1], 10) || 0) / 60 : parseFloat(time); const numericDistance = parseFloat(distance); if (!totalMinutes || !numericDistance) return null; const pace = totalMinutes / numericDistance; const minutes = Math.floor(pace); const seconds = Math.round((pace - minutes) * 60); return `${minutes}:${String(seconds).padStart(2, '0')}`; };
+  const calculatePace = (time, distance) => {
+    if (!time || !distance) return null;
+    const parts = String(time).trim().split(':');
+    const totalMinutes = parts.length === 2
+      ? (parseInt(parts[0], 10) || 0) + (parseInt(parts[1], 10) || 0) / 60
+      : parseDecimalInput(time);
+    const numericDistance = parseDecimalInput(distance);
+    if (!totalMinutes || !numericDistance) return null;
+    const pace = totalMinutes / numericDistance;
+    const roundedSeconds = Math.round((pace - Math.floor(pace)) * 60);
+    const minutes = Math.floor(pace) + (roundedSeconds === 60 ? 1 : 0);
+    const seconds = roundedSeconds === 60 ? 0 : roundedSeconds;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  };
 
   const workoutProps = {
     selectedDay,

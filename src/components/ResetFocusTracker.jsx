@@ -11,6 +11,7 @@ const STORAGE_KEY = 'dopamine-reset-data-v2';
 const SELECTED_DAY_KEY = 'dopamine-reset-selected-day';
 const CUSTOM_EXERCISES_KEY = 'dopamine-reset-custom-exercises';
 const EXERCISE_RENAMES_KEY = 'dopamine-reset-exercise-renames';
+const parseDecimalInput = (value) => parseFloat(String(value).trim().replace(',', '.'));
 
 const createInitialDays = () =>
   Array.from({ length: 30 }, (_, i) => ({
@@ -401,15 +402,16 @@ export default function ResetFocusTracker() {
       const seconds = parseInt(timeParts[1], 10) || 0;
       totalMinutes = minutes + seconds / 60;
     } else {
-      totalMinutes = parseFloat(time);
+      totalMinutes = parseDecimalInput(time);
     }
 
-    const numericDistance = parseFloat(distance);
+    const numericDistance = parseDecimalInput(distance);
     if (!totalMinutes || !numericDistance) return null;
 
     const pace = totalMinutes / numericDistance;
-    const paceMinutes = Math.floor(pace);
-    const paceSeconds = Math.round((pace - paceMinutes) * 60);
+    const roundedSeconds = Math.round((pace - Math.floor(pace)) * 60);
+    const paceMinutes = Math.floor(pace) + (roundedSeconds === 60 ? 1 : 0);
+    const paceSeconds = roundedSeconds === 60 ? 0 : roundedSeconds;
 
     return `${paceMinutes}:${String(paceSeconds).padStart(2, '0')}`;
   };
