@@ -79,7 +79,7 @@ const normalizeDays = (loadedDays, selectedOffset = 0) => {
       ...baseDay,
       ...savedDay,
       checks: habits.map((_, habitIndex) => Boolean(savedChecks[habitIndex])),
-      date: savedDay.date || baseDay.date,
+      date: baseDay.date,
       feeling: savedDay.feeling || baseDay.feeling,
       workout: Array.isArray(savedDay.workout) ? savedDay.workout : [],
       tasks: Array.isArray(savedDay.tasks) ? savedDay.tasks : [],
@@ -96,7 +96,7 @@ const loadDays = () => {
     safeSave(STORAGE_KEY, migrated);
     return migrated;
   }
-  return createInitialDays();
+  return createInitialDays(selectedOffset);
 };
 const getScoreState = (score) => {
   if (score >= 13) return { emoji: '🔥', label: 'Día élite', color: 'text-emerald-300', ring: 'ring-emerald-400/40', bg: 'bg-emerald-500/10' };
