@@ -13,6 +13,7 @@ const SELECTED_DAY_KEY = 'dopamine-reset-selected-day';
 const CUSTOM_EXERCISES_KEY = 'dopamine-reset-custom-exercises';
 const EXERCISE_RENAMES_KEY = 'dopamine-reset-exercise-renames';
 const LEGACY_STORAGE_KEY = 'dopamine-reset-data';
+const CURRENT_REAL_DAY_INDEX = 17;
 const tabs = [
   { id: 'dashboard', label: 'Dashboard', icon: '⌂' },
   { id: 'habits', label: 'Hábitos', icon: '✓' },
@@ -35,10 +36,10 @@ const addDays = (date, amount) => {
 const getSavedSelectedDayIndex = () => {
   try {
     const saved = localStorage.getItem(SELECTED_DAY_KEY);
-    const parsed = saved !== null ? Number(saved) : 0;
-    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+    const parsed = saved !== null ? Number(saved) : CURRENT_REAL_DAY_INDEX;
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : CURRENT_REAL_DAY_INDEX;
   } catch {
-    return 0;
+    return CURRENT_REAL_DAY_INDEX;
   }
 };
 const createInitialDays = (selectedOffset = 0) => {
