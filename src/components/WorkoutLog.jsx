@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import FitnessIcon from './FitnessIcon.jsx';
 
 const getTrackingType = (item) => {
@@ -15,15 +16,28 @@ export default function WorkoutLog(props) {
     selectedDay, selectedMuscle, setSelectedMuscle, selectedExercise, setSelectedExercise,
     selectedMuscleExercises, muscleGroups, getExercisesForMuscle, addWorkoutExercise,
     renameExerciseName, setRenameExerciseName, saveExerciseRename, newExerciseName,
-    setNewExerciseName, addCustomExercise, lastExerciseEntry, removeWorkoutExercise,
+    setNewExerciseName, addCustomExercise, lastExerciseEntry, selectedExerciseHistory,
+    removeWorkoutExercise,
     updateCardioData, calculatePace, updateExerciseSet, removeExerciseSet, addSetToExercise,
   } = props;
+  const [showExerciseHistory, setShowExerciseHistory] = useState(false);
+
+  if (showExerciseHistory) {
+    return (
+      <ExerciseHistoryScreen
+        calculatePace={calculatePace}
+        exerciseName={selectedExercise}
+        history={selectedExerciseHistory}
+        onBack={() => setShowExerciseHistory(false)}
+      />
+    );
+  }
 
   return (
     <section className="mt-5 rounded-[2rem] border border-white/10 bg-zinc-900/80 p-5 shadow-2xl shadow-black/30">
       <div className="mb-5"><h2 className="text-2xl font-black">🏋️ Workout Log Día {selectedDay.day}</h2><p className="text-sm text-zinc-400">Selecciona músculo, ejercicio y registra tu progreso.</p></div>
       <MusclePicker muscleGroups={muscleGroups} selectedMuscle={selectedMuscle} setSelectedMuscle={setSelectedMuscle} setSelectedExercise={setSelectedExercise} getExercisesForMuscle={getExercisesForMuscle} />
-      <ExercisePicker selectedMuscle={selectedMuscle} selectedExercise={selectedExercise} setSelectedExercise={setSelectedExercise} selectedMuscleExercises={selectedMuscleExercises} addWorkoutExercise={addWorkoutExercise} renameExerciseName={renameExerciseName} setRenameExerciseName={setRenameExerciseName} saveExerciseRename={saveExerciseRename} newExerciseName={newExerciseName} setNewExerciseName={setNewExerciseName} addCustomExercise={addCustomExercise} lastExerciseEntry={lastExerciseEntry} />
+      <ExercisePicker selectedMuscle={selectedMuscle} selectedExercise={selectedExercise} setSelectedExercise={setSelectedExercise} selectedMuscleExercises={selectedMuscleExercises} addWorkoutExercise={addWorkoutExercise} renameExerciseName={renameExerciseName} setRenameExerciseName={setRenameExerciseName} saveExerciseRename={saveExerciseRename} newExerciseName={newExerciseName} setNewExerciseName={setNewExerciseName} addCustomExercise={addCustomExercise} lastExerciseEntry={lastExerciseEntry} onViewHistory={() => setShowExerciseHistory(true)} />
       <WorkoutEntries selectedDay={selectedDay} removeWorkoutExercise={removeWorkoutExercise} updateCardioData={updateCardioData} calculatePace={calculatePace} updateExerciseSet={updateExerciseSet} removeExerciseSet={removeExerciseSet} addSetToExercise={addSetToExercise} />
     </section>
   );
@@ -48,7 +62,7 @@ function MusclePicker({ muscleGroups, selectedMuscle, setSelectedMuscle, setSele
   );
 }
 
-function ExercisePicker({ selectedMuscle, selectedExercise, setSelectedExercise, selectedMuscleExercises, addWorkoutExercise, renameExerciseName, setRenameExerciseName, saveExerciseRename, newExerciseName, setNewExerciseName, addCustomExercise, lastExerciseEntry }) {
+function ExercisePicker({ selectedMuscle, selectedExercise, setSelectedExercise, selectedMuscleExercises, addWorkoutExercise, renameExerciseName, setRenameExerciseName, saveExerciseRename, newExerciseName, setNewExerciseName, addCustomExercise, lastExerciseEntry, onViewHistory }) {
   return (
     <div className="mb-5 rounded-3xl border border-white/10 bg-black/30 p-4">
       <p className="mb-3 text-sm font-bold text-zinc-300">2. Selecciona ejercicio</p>
@@ -69,13 +83,13 @@ function ExercisePicker({ selectedMuscle, selectedExercise, setSelectedExercise,
       </div>
       <div className="mt-3 rounded-2xl border border-white/10 bg-zinc-950 p-3">
         <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">Historial rápido</p>
-        {lastExerciseEntry ? <LastExerciseSummary entry={lastExerciseEntry} /> : <p className="mt-1 text-sm text-zinc-500">Todavía no hay historial para {selectedExercise}.</p>}
+        {lastExerciseEntry ? <LastExerciseSummary entry={lastExerciseEntry} onViewHistory={onViewHistory} /> : <p className="mt-1 text-sm text-zinc-500">Todavía no hay historial para {selectedExercise}.</p>}
       </div>
     </div>
   );
 }
 
-function LastExerciseSummary({ entry }) {
+function LastExerciseSummary({ entry, onViewHistory }) {
   const sets = entry.setsData?.length ? entry.setsData : [{ reps: entry.reps || '', weight: entry.weight || '', unit: 'lbs' }];
   const trackingType = getTrackingType(entry);
 
@@ -89,6 +103,7 @@ function LastExerciseSummary({ entry }) {
           <p><span className="text-zinc-500">Tiempo:</span> {time}</p>
           <p><span className="text-zinc-500">Distancia:</span> {distance}</p>
         </div>
+        <button onClick={onViewHistory} className="w-full rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-black text-emerald-300 active:scale-95">Ver historial completo</button>
       </div>
     );
   }
@@ -110,8 +125,141 @@ function LastExerciseSummary({ entry }) {
           return <p key={set.id || index} className="text-xs text-zinc-300"><span className="font-bold text-emerald-300">Set {index + 1}:</span> {reps} reps · {weight}</p>;
         })}
       </div>
+      <button onClick={onViewHistory} className="w-full rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-black text-emerald-300 active:scale-95">Ver historial completo</button>
     </div>
   );
+}
+
+function ExerciseHistoryScreen({ calculatePace, exerciseName, history, onBack }) {
+  const entries = [...(history || [])].reverse();
+  const bestLabel = getBestPerformanceLabel(entries, calculatePace);
+  const lastEntry = entries[0];
+
+  return (
+    <section className="mt-5 rounded-[2rem] border border-white/10 bg-zinc-900/80 p-5 shadow-2xl shadow-black/30">
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.28em] text-emerald-300">Historial</p>
+          <h2 className="text-2xl font-black leading-tight">{exerciseName}</h2>
+          <p className="mt-1 text-sm text-zinc-400">Progreso completo del ejercicio.</p>
+        </div>
+        <button onClick={onBack} className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm font-black text-zinc-200 active:scale-95">Volver</button>
+      </div>
+
+      <div className="mb-5 grid grid-cols-3 gap-2">
+        <HistoryMetric label="Sesiones" value={entries.length} />
+        <HistoryMetric label="Último día" value={lastEntry ? `Día ${lastEntry.day}` : '--'} />
+        <HistoryMetric label="Mejor" value={bestLabel} />
+      </div>
+
+      {entries.length === 0 ? (
+        <div className="rounded-3xl border border-dashed border-white/10 bg-black/30 p-5 text-center">
+          <p className="font-bold">Todavía no hay historial completo.</p>
+          <p className="mt-1 text-sm text-zinc-400">Cuando registres datos, aparecerán aquí por día.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {entries.map((entry) => (
+            <div key={`${entry.day}-${entry.id}`} className="rounded-3xl border border-white/10 bg-black/40 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase text-emerald-300">Día {entry.day}</p>
+                  <p className="text-lg font-black">{entry.muscle}</p>
+                </div>
+                <p className="rounded-2xl border border-white/10 bg-zinc-950 px-3 py-2 text-xs font-bold text-zinc-300">{getTrackingLabel(entry)}</p>
+              </div>
+              <EntryDetails calculatePace={calculatePace} entry={entry} />
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function HistoryMetric({ label, value }) {
+  return (
+    <div className="rounded-3xl border border-white/10 bg-black/40 p-3">
+      <p className="text-lg font-black text-white">{value}</p>
+      <p className="text-[10px] font-bold uppercase text-zinc-500">{label}</p>
+    </div>
+  );
+}
+
+function EntryDetails({ calculatePace, entry }) {
+  if (entry.type === 'cardio') {
+    const pace = calculatePace(entry.cardioData?.time, entry.cardioData?.distance);
+    return (
+      <div className="grid grid-cols-3 gap-2 text-xs text-zinc-300">
+        <HistoryData label="Tiempo" value={entry.cardioData?.time || '--'} />
+        <HistoryData label="Distancia" value={entry.cardioData?.distance ? `${entry.cardioData.distance} ${entry.cardioData.distanceUnit || 'km'}` : '--'} />
+        <HistoryData label="Pace" value={pace ? `${pace}/${entry.cardioData?.distanceUnit || 'km'}` : '--'} />
+      </div>
+    );
+  }
+
+  const trackingType = getTrackingType(entry);
+  const sets = entry.setsData?.length ? entry.setsData : [{ reps: entry.reps || '', weight: entry.weight || '', unit: 'lbs' }];
+
+  return (
+    <div className="space-y-2">
+      {sets.map((set, index) => (
+        <p key={set.id || index} className="rounded-2xl border border-white/10 bg-zinc-950 p-3 text-xs text-zinc-300">
+          <span className="font-bold text-emerald-300">Set {index + 1}:</span> {formatSetSummary(set, trackingType)}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function HistoryData({ label, value }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-zinc-950 p-3">
+      <p className="font-black text-white">{value}</p>
+      <p className="mt-1 text-[10px] font-bold uppercase text-zinc-500">{label}</p>
+    </div>
+  );
+}
+
+function formatSetSummary(set, trackingType) {
+  if (trackingType === 'time') return `${set.duration || set.time || '--'} tiempo`;
+  if (trackingType === 'bodyweight') {
+    const weight = set.weightMode === 'weighted' && set.weight ? ` · ${set.weight} ${set.unit || 'lbs'}` : ' · sin peso';
+    return `${set.reps || '--'} reps${weight}`;
+  }
+  const weight = set.weight ? `${set.weight} ${set.unit || 'lbs'}` : '--';
+  return `${set.reps || '--'} reps · ${weight}`;
+}
+
+function getTrackingLabel(entry) {
+  const trackingType = getTrackingType(entry);
+  if (trackingType === 'cardio') return 'Cardio';
+  if (trackingType === 'time') return 'Tiempo';
+  if (trackingType === 'bodyweight') return 'Reps';
+  return 'Peso';
+}
+
+function getBestPerformanceLabel(entries, calculatePace) {
+  if (!entries.length) return '--';
+  const type = getTrackingType(entries[0]);
+  if (type === 'cardio') {
+    const paces = entries.map((entry) => {
+      const pace = calculatePace(entry.cardioData?.time, entry.cardioData?.distance);
+      if (!pace) return null;
+      const [minutes, seconds] = pace.split(':').map(Number);
+      return { label: `${pace}/${entry.cardioData?.distanceUnit || 'km'}`, value: minutes * 60 + seconds };
+    }).filter(Boolean);
+    return paces.length ? paces.sort((a, b) => a.value - b.value)[0].label : '--';
+  }
+  if (type === 'time') {
+    const durations = entries.flatMap((entry) => entry.setsData || []).map((set) => set.duration || set.time).filter(Boolean);
+    return durations.at(-1) || '--';
+  }
+  const sets = entries.flatMap((entry) => entry.setsData || []);
+  const maxWeight = sets.reduce((best, set) => Math.max(best, Number(set.weight) || 0), 0);
+  if (maxWeight > 0) return `${maxWeight} ${sets.find((set) => Number(set.weight) === maxWeight)?.unit || 'lbs'}`;
+  const maxReps = sets.reduce((best, set) => Math.max(best, Number(set.reps) || 0), 0);
+  return maxReps ? `${maxReps} reps` : '--';
 }
 
 function WorkoutEntries({ selectedDay, removeWorkoutExercise, updateCardioData, calculatePace, updateExerciseSet, removeExerciseSet, addSetToExercise }) {

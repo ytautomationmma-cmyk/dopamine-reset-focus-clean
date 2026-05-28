@@ -137,6 +137,7 @@ export default function ResetFocusTracker() {
   const addWorkoutExercise = () => { const muscle = muscleGroups.find((g) => g.name === selectedMuscle) || muscleGroups[0]; const exerciseName = selectedExercise || getExercisesForMuscle(muscle.name)[0]; const trackingType = getExerciseTrackingType(muscle.name, exerciseName); setDaysAndSave((current) => current.map((day, index) => index === selectedDayIndex ? { ...day, workout: [{ id: Date.now() + Math.random(), muscle: muscle.name, exercise: exerciseName, type: trackingType === 'cardio' ? 'cardio' : 'strength', trackingType, setsData: trackingType === 'cardio' ? [] : [createInitialSet(trackingType)], cardioData: { time: '', distance: '', distanceUnit: 'km' } }, ...(day.workout || [])] } : day)); };
   const getExerciseHistory = (exerciseName) => { const history = []; days.forEach((day) => (day.workout || []).forEach((item) => { const strength = (item.setsData || []).some((set) => set.reps || set.weight || set.duration); const cardio = item.cardioData?.time || item.cardioData?.distance; if (item.exercise === exerciseName && (strength || cardio)) history.push({ day: day.day, ...item }); })); return history; };
   const lastExerciseEntry = getExerciseHistory(selectedExercise).at(-1);
+  const selectedExerciseHistory = getExerciseHistory(selectedExercise);
   const addSetToExercise = (exerciseId) => setDaysAndSave((current) => current.map((day, dayIndex) => dayIndex === selectedDayIndex ? { ...day, workout: (day.workout || []).map((item) => { if (item.id !== exerciseId) return item; const trackingType = item.trackingType || getExerciseTrackingType(item.muscle, item.exercise); const currentSets = item.setsData?.length ? item.setsData : [createInitialSet(trackingType)]; return { ...item, trackingType, setsData: [...currentSets, createInitialSet(trackingType, currentSets.at(-1)?.unit || 'lbs')] }; }) } : day));
   const updateExerciseSet = (exerciseId, setIndex, field, value) => setDaysAndSave((current) => current.map((day, dayIndex) => dayIndex === selectedDayIndex ? { ...day, workout: (day.workout || []).map((item) => item.id === exerciseId ? { ...item, setsData: (item.setsData || []).map((set, index) => index === setIndex ? { ...set, [field]: value } : set) } : item) } : day));
   const removeExerciseSet = (exerciseId, setIndex) => setDaysAndSave((current) => current.map((day, dayIndex) => dayIndex === selectedDayIndex ? { ...day, workout: (day.workout || []).map((item) => item.id !== exerciseId ? item : { ...item, setsData: (item.setsData || []).length <= 1 ? item.setsData : item.setsData.filter((_, index) => index !== setIndex) }) } : day));
@@ -174,6 +175,7 @@ export default function ResetFocusTracker() {
     setNewExerciseName,
     addCustomExercise,
     lastExerciseEntry,
+    selectedExerciseHistory,
     removeWorkoutExercise,
     updateCardioData,
     calculatePace,
