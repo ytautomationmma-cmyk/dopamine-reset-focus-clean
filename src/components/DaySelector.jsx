@@ -1,3 +1,5 @@
+import { useEffect, useMemo, useState } from 'react';
+
 const weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
 const parseDate = (dateKey) => new Date(`${dateKey}T00:00:00`);
@@ -9,35 +11,68 @@ const toDateKey = (date) => {
   return `${year}-${month}-${day}`;
 };
 
-const formatMonthRange = (days) => {
-  const first = parseDate(days[0].date);
-  const last = parseDate(days[days.length - 1].date);
-  const firstLabel = first.toLocaleDateString('es-CO', { month: 'long' });
-  const lastLabel = last.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
-  return first.getMonth() === last.getMonth() ? lastLabel : `${firstLabel} - ${lastLabel}`;
-};
+const addMonths = (date, amount) => new Date(date.getFullYear(), date.getMonth() + amount, 1);
 
-const getCalendarCells = (days) => {
-  const firstDay = parseDate(days[0].date);
+const formatMonth = (date) => date.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+
+const buildMonthCells = (visibleMonth) => {
+  const firstDay = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+  const daysInMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0).getDate();
   const mondayFirstOffset = (firstDay.getDay() + 6) % 7;
-  return [...Array(mondayFirstOffset).fill(null), ...days];
+  const calendarDays = Array.from({ length: daysInMonth }, (_, index) => {
+    const date = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), index + 1);
+    return { calendarDay: index + 1, dateKey: toDateKey(date) };
+  });
+
+  return [...Array(mondayFirstOffset).fill(null), ...calendarDays];
 };
 
 export default function DaySelector({ days, level, selectedDayIndex, setSelectedDayIndex, scoreForDay, getScoreState }) {
+  const selectedDay = days[selectedDayIndex];
+  const [visibleMonth, setVisibleMonth] = useState(() => {
+    const selectedDate = parseDate(selectedDay.date);
+    return new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+  });
   const todayKey = toDateKey(new Date());
-  const cells = getCalendarCells(days);
+  const monthCells = buildMonthCells(visibleMonth);
+  const dayByDate = useMemo(() => new Map(days.map((day, index) => [day.date, { day, index }])), [days]);
+
+  useEffect(() => {
+    const selectedDate = parseDate(selectedDay.date);
+    setVisibleMonth(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+  }, [selectedDay.date]);
 
   return (
     <section className="mb-5 rounded-3xl border border-white/10 bg-zinc-900/80 p-4 shadow-xl shadow-black/20">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-zinc-300">{level}</p>
-          <p className="mt-1 text-xs font-bold capitalize tracking-[0.12em] text-zinc-500">{formatMonthRange(days)}</p>
+          <p className="mt-1 text-xs font-bold capitalize tracking-[0.12em] text-zinc-500">{formatMonth(visibleMonth)}</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-black/30 px-3 py-2 text-right">
           <p className="text-xs font-bold text-zinc-500">Actual</p>
-          <p className="text-sm font-black text-white">Día {days[selectedDayIndex]?.day}</p>
+          <p className="text-sm font-black text-white">Día {selectedDay?.day}</p>
         </div>
+      </div>
+
+      <div className="mb-4 grid grid-cols-[2.75rem_1fr_2.75rem] items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setVisibleMonth((current) => addMonths(current, -1))}
+          className="h-11 rounded-2xl border border-white/10 bg-black/30 text-lg font-black text-zinc-300 transition active:scale-95"
+          aria-label="Mes anterior"
+        >
+          ‹
+        </button>
+        <p className="text-center text-sm font-black capitalize text-white">{formatMonth(visibleMonth)}</p>
+        <button
+          type="button"
+          onClick={() => setVisibleMonth((current) => addMonths(current, 1))}
+          className="h-11 rounded-2xl border border-white/10 bg-black/30 text-lg font-black text-zinc-300 transition active:scale-95"
+          aria-label="Mes siguiente"
+        >
+          ›
+        </button>
       </div>
 
       <div className="grid grid-cols-7 gap-1.5">
@@ -45,28 +80,38 @@ export default function DaySelector({ days, level, selectedDayIndex, setSelected
           <div key={`${day}-${index}`} className="pb-1 text-center text-[10px] font-black text-zinc-600">{day}</div>
         ))}
 
-        {cells.map((day, index) => {
-          if (!day) return <div key={`empty-${index}`} className="aspect-square rounded-2xl" />;
+        {monthCells.map((cell, index) => {
+          if (!cell) return <div key={`empty-${index}`} className="aspect-square rounded-2xl" />;
 
-          const dayIndex = day.day - 1;
-          const score = scoreForDay(day);
+          const planDay = dayByDate.get(cell.dateKey);
+          const isToday = cell.dateKey === todayKey;
+
+          if (!planDay) {
+            return (
+              <div
+                key={cell.dateKey}
+                className={`aspect-square rounded-2xl border border-white/[0.04] bg-black/20 p-1 text-center text-zinc-700 ${isToday ? 'outline outline-1 outline-offset-2 outline-emerald-300/50' : ''}`}
+              >
+                <span className="block text-xs font-black leading-none">{cell.calendarDay}</span>
+              </div>
+            );
+          }
+
+          const score = scoreForDay(planDay.day);
           const state = getScoreState(score);
-          const isSelected = dayIndex === selectedDayIndex;
-          const isToday = day.date === todayKey;
-          const date = parseDate(day.date);
-          const calendarDay = date.getDate();
+          const isSelected = planDay.index === selectedDayIndex;
           const dayTone = score > 0 ? `${state.bg} ${state.color} ring-1 ${state.ring}` : 'bg-zinc-800/80 text-zinc-500';
 
           return (
             <button
-              key={day.day}
+              key={cell.dateKey}
               type="button"
-              onClick={() => setSelectedDayIndex(dayIndex)}
+              onClick={() => setSelectedDayIndex(planDay.index)}
               className={`aspect-square rounded-2xl p-1 text-center transition active:scale-95 ${isSelected ? 'bg-white text-black shadow-lg shadow-white/10' : dayTone} ${isToday && !isSelected ? 'outline outline-1 outline-offset-2 outline-emerald-300/60' : ''}`}
-              aria-label={`Seleccionar día ${day.day}`}
+              aria-label={`Seleccionar día ${planDay.day.day}`}
             >
-              <span className="block text-[10px] font-black leading-none opacity-70">{calendarDay}</span>
-              <span className="mt-1 block text-sm font-black leading-none">{day.day}</span>
+              <span className="block text-[10px] font-black leading-none opacity-70">{cell.calendarDay}</span>
+              <span className="mt-1 block text-sm font-black leading-none">{planDay.day.day}</span>
               <span className="mt-1 block text-[8px] font-bold uppercase leading-none opacity-60">día</span>
             </button>
           );
