@@ -5,6 +5,7 @@ import Stats from './components/Stats.jsx';
 import DaySelector from './components/DaySelector.jsx';
 import HabitTracker from './components/HabitTracker.jsx';
 import WorkoutLog from './components/WorkoutLog.jsx';
+import TaskTracker from './components/TaskTracker.jsx';
 import FooterCards from './components/FooterCards.jsx';
 
 const STORAGE_KEY = 'dopamine-reset-data-v2';
@@ -16,10 +17,41 @@ const tabs = [
   { id: 'dashboard', label: 'Dashboard', icon: '⌂' },
   { id: 'habits', label: 'Hábitos', icon: '✓' },
   { id: 'workout', label: 'Workout', icon: '◇' },
+  { id: 'tasks', label: 'Tasks', icon: '□' },
   { id: 'stats', label: 'Stats', icon: '▦' },
 ];
 
-const createInitialDays = () => Array.from({ length: 30 }, (_, i) => ({ day: i + 1, checks: Array(habits.length).fill(false), feeling: '🙂 Bien', workout: [] }));
+const toDateKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+const addDays = (date, amount) => {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return next;
+};
+const getSavedSelectedDayIndex = () => {
+  try {
+    const saved = localStorage.getItem(SELECTED_DAY_KEY);
+    const parsed = saved !== null ? Number(saved) : 0;
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  } catch {
+    return 0;
+  }
+};
+const createInitialDays = (selectedOffset = 0) => {
+  const startDate = addDays(new Date(), -selectedOffset);
+  return Array.from({ length: 30 }, (_, i) => ({
+    day: i + 1,
+    date: toDateKey(addDays(startDate, i)),
+    checks: Array(habits.length).fill(false),
+    feeling: '🙂 Bien',
+    workout: [],
+    tasks: [],
+  }));
+};
 const safeLoad = (key, fallback) => { try { const saved = localStorage.getItem(key); return saved ? JSON.parse(saved) : fallback; } catch { return fallback; } };
 const safeSave = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
 const parseDecimalInput = (value) => parseFloat(String(value).trim().replace(',', '.'));
@@ -36,8 +68,8 @@ const createInitialSet = (trackingType, unit = 'lbs') => {
   if (trackingType === 'bodyweight') return { id: Date.now() + Math.random(), reps: '', weightMode: 'none', weight: '', unit };
   return { id: Date.now() + Math.random(), reps: '', weight: '', unit };
 };
-const normalizeDays = (loadedDays) => {
-  const fallback = createInitialDays();
+const normalizeDays = (loadedDays, selectedOffset = 0) => {
+  const fallback = createInitialDays(selectedOffset);
   if (!Array.isArray(loadedDays)) return fallback;
   return fallback.map((baseDay, index) => {
     const savedDay = loadedDays[index] || {};
@@ -46,17 +78,20 @@ const normalizeDays = (loadedDays) => {
       ...baseDay,
       ...savedDay,
       checks: habits.map((_, habitIndex) => Boolean(savedChecks[habitIndex])),
+      date: savedDay.date || baseDay.date,
       feeling: savedDay.feeling || baseDay.feeling,
       workout: Array.isArray(savedDay.workout) ? savedDay.workout : [],
+      tasks: Array.isArray(savedDay.tasks) ? savedDay.tasks : [],
     };
   });
 };
 const loadDays = () => {
+  const selectedOffset = getSavedSelectedDayIndex();
   const current = safeLoad(STORAGE_KEY, null);
-  if (current) return normalizeDays(current);
+  if (current) return normalizeDays(current, selectedOffset);
   const legacy = safeLoad(LEGACY_STORAGE_KEY, null);
   if (legacy) {
-    const migrated = normalizeDays(legacy);
+    const migrated = normalizeDays(legacy, selectedOffset);
     safeSave(STORAGE_KEY, migrated);
     return migrated;
   }
@@ -70,7 +105,7 @@ const getScoreState = (score) => {
 
 export default function ResetFocusTracker() {
   const [days, setDays] = useState(loadDays);
-  const [selectedDayIndex, setSelectedDayIndex] = useState(() => { try { const saved = localStorage.getItem(SELECTED_DAY_KEY); return saved !== null ? Number(saved) : 0; } catch { return 0; } });
+  const [selectedDayIndex, setSelectedDayIndex] = useState(getSavedSelectedDayIndex);
   const [customExercises, setCustomExercises] = useState(() => safeLoad(CUSTOM_EXERCISES_KEY, {}));
   const [exerciseRenames, setExerciseRenames] = useState(() => safeLoad(EXERCISE_RENAMES_KEY, {}));
   const [selectedMuscle, setSelectedMuscle] = useState('Pecho');
@@ -91,6 +126,7 @@ export default function ResetFocusTracker() {
   const scores = days.map(scoreForDay);
   const selectedScore = scoreForDay(selectedDay);
   const completedHabits = selectedDay.checks.filter(Boolean).length;
+  const completedTasks = (selectedDay.tasks || []).filter((task) => task.done).length;
   const totalPossible = habits.reduce((sum, habit) => sum + habit.points, 0);
   const progressPercent = Math.round((selectedScore / totalPossible) * 100);
   const scoresUntilSelectedDay = scores.slice(0, selectedDayIndex + 1);
@@ -123,6 +159,13 @@ export default function ResetFocusTracker() {
 
   const toggleCheck = (habitIndex) => setDaysAndSave((current) => current.map((day, index) => index === selectedDayIndex ? { ...day, checks: day.checks.map((checked, i) => i === habitIndex ? !checked : checked) } : day));
   const updateFeeling = (value) => setDaysAndSave((current) => current.map((day, index) => index === selectedDayIndex ? { ...day, feeling: value } : day));
+  const addTask = (title) => {
+    const clean = title.trim();
+    if (!clean) return;
+    setDaysAndSave((current) => current.map((day, index) => index === selectedDayIndex ? { ...day, tasks: [{ id: Date.now() + Math.random(), title: clean, done: false }, ...(day.tasks || [])] } : day));
+  };
+  const toggleTask = (taskId) => setDaysAndSave((current) => current.map((day, index) => index === selectedDayIndex ? { ...day, tasks: (day.tasks || []).map((task) => task.id === taskId ? { ...task, done: !task.done } : task) } : day));
+  const removeTask = (taskId) => setDaysAndSave((current) => current.map((day, index) => index === selectedDayIndex ? { ...day, tasks: (day.tasks || []).filter((task) => task.id !== taskId) } : day));
   const getExercisesForMuscle = (muscleName) => { const base = muscleGroups.find((g) => g.name === muscleName) || muscleGroups[0]; const custom = customExercises[muscleName] || []; const renames = exerciseRenames[muscleName] || {}; return [...new Set([...base.exercises.map((ex) => renames[ex] || ex), ...custom])]; };
   const selectedMuscleExercises = getExercisesForMuscle(selectedMuscle);
 
@@ -188,6 +231,7 @@ export default function ResetFocusTracker() {
     { label: 'Wins', value: winCount, accent: 'text-emerald-300' },
     { label: 'Élite', value: eliteCount, accent: 'text-orange-300' },
     { label: 'Hábitos', value: `${completedHabits}/${habits.length}`, accent: 'text-sky-300' },
+    { label: 'Tasks', value: `${completedTasks}/${(selectedDay.tasks || []).length}`, accent: 'text-violet-300' },
   ];
 
   const renderActiveTab = () => {
@@ -209,10 +253,16 @@ export default function ResetFocusTracker() {
       );
     }
 
+    if (activeTab === 'tasks') {
+      return (
+        <TaskTracker selectedDay={selectedDay} addTask={addTask} toggleTask={toggleTask} removeTask={removeTask} />
+      );
+    }
+
     return (
       <>
         <Header scoreState={scoreState} selectedScore={selectedScore} progressPercent={progressPercent} />
-        <section className="mb-5 grid grid-cols-3 gap-3">
+        <section className="mb-5 grid grid-cols-2 gap-3">
           {dashboardMetrics.map((metric) => (
             <div key={metric.label} className="rounded-3xl border border-white/10 bg-zinc-900/80 p-4 shadow-xl shadow-black/20">
               <p className={`text-2xl font-black ${metric.accent}`}>{metric.value}</p>
@@ -239,7 +289,7 @@ export default function ResetFocusTracker() {
 function BottomTabBar({ activeTab, setActiveTab }) {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-black/90 px-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-3 shadow-2xl shadow-black/60 backdrop-blur-xl">
-      <div className="mx-auto grid max-w-md grid-cols-4 gap-2 md:max-w-xl">
+      <div className="mx-auto grid max-w-md grid-cols-5 gap-1.5 md:max-w-xl">
         {tabs.map((tab) => {
           const active = activeTab === tab.id;
           return (
@@ -247,11 +297,11 @@ function BottomTabBar({ activeTab, setActiveTab }) {
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`rounded-2xl px-2 py-2.5 text-center transition active:scale-95 ${active ? 'bg-white text-black shadow-lg shadow-emerald-400/10' : 'text-zinc-500 hover:bg-white/5 hover:text-zinc-200'}`}
+              className={`rounded-2xl px-1.5 py-2.5 text-center transition active:scale-95 ${active ? 'bg-white text-black shadow-lg shadow-emerald-400/10' : 'text-zinc-500 hover:bg-white/5 hover:text-zinc-200'}`}
               aria-current={active ? 'page' : undefined}
             >
               <span className="block text-xl leading-none">{tab.icon}</span>
-              <span className="mt-1 block text-[11px] font-black">{tab.label}</span>
+              <span className="mt-1 block text-[10px] font-black">{tab.label}</span>
             </button>
           );
         })}
