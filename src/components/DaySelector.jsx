@@ -56,7 +56,7 @@ export default function DaySelector({ days, level, selectedDayIndex, setSelected
           <p className="mt-1 text-xs font-bold capitalize tracking-[0.12em] text-zinc-500">{formatMonth(visibleMonth)}</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-black/30 px-3 py-2 text-right">
-          <p className="text-xs font-bold text-zinc-500">Actual</p>
+          <p className="text-xs font-bold text-zinc-500">Seleccionado</p>
           <p className="text-sm font-black capitalize text-white">{formatSelectedLabel(selectedDay)}</p>
         </div>
       </div>

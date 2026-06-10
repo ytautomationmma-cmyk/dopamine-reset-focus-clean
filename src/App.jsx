@@ -49,26 +49,29 @@ const getSavedSelectedDayIndex = (fallback = 0) => {
     return fallback;
   }
 };
+const getInitialSelectedDayIndex = (loadedDays) => {
+  const todayIndex = loadedDays.findIndex((day) => day.date === toDateKey(new Date()));
+  return todayIndex >= 0 ? todayIndex : getSavedSelectedDayIndex(0);
+};
 const getChallengeStartDateKey = (loadedDays) => {
-  if (Array.isArray(loadedDays) && loadedDays[0]?.challengeStartDate) return loadedDays[0].challengeStartDate;
-  if (Array.isArray(loadedDays) && loadedDays[0]?.date) return loadedDays[0].date;
+  if (Array.isArray(loadedDays) && loadedDays[0]?.challengeStartSource) return loadedDays[0].challengeStartDate || loadedDays[0].date;
   if (Array.isArray(loadedDays)) return getLegacyChallengeStartDateKey();
   return toDateKey(new Date());
 };
-const createDay = (dayNumber, dateKey, challengeStartDateKey, challengeLength = CHALLENGE_LENGTH) => ({
+const createDay = (dayNumber, dateKey, challengeStartDateKey, challengeLength = CHALLENGE_LENGTH, challengeStartSource = 'device') => ({
   day: dayNumber,
   date: dateKey,
   challengeDay: dayNumber <= challengeLength ? dayNumber : null,
   challengeId: dayNumber <= challengeLength ? 'initial-challenge' : null,
-  ...(dayNumber === 1 ? { challengeStartDate: challengeStartDateKey, challengeLength } : {}),
+  ...(dayNumber === 1 ? { challengeStartDate: challengeStartDateKey, challengeStartSource, challengeLength } : {}),
   checks: Array(habits.length).fill(false),
   feeling: '🙂 Bien',
   workout: [],
   tasks: [],
 });
-const createInitialDays = (length = CHALLENGE_LENGTH, startDateKey = toDateKey(new Date()), challengeLength = CHALLENGE_LENGTH) => {
+const createInitialDays = (length = CHALLENGE_LENGTH, startDateKey = toDateKey(new Date()), challengeLength = CHALLENGE_LENGTH, challengeStartSource = 'device') => {
   const startDate = parseDateKey(startDateKey);
-  return Array.from({ length }, (_, i) => createDay(i + 1, toDateKey(addDays(startDate, i)), startDateKey, challengeLength));
+  return Array.from({ length }, (_, i) => createDay(i + 1, toDateKey(addDays(startDate, i)), startDateKey, challengeLength, challengeStartSource));
 };
 const safeLoad = (key, fallback) => { try { const saved = localStorage.getItem(key); return saved ? JSON.parse(saved) : fallback; } catch { return fallback; } };
 const safeSave = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
@@ -88,9 +91,10 @@ const createInitialSet = (trackingType, unit = 'lbs') => {
 };
 const normalizeDays = (loadedDays) => {
   const challengeStartDateKey = getChallengeStartDateKey(loadedDays);
+  const challengeStartSource = loadedDays?.[0]?.challengeStartSource || (Array.isArray(loadedDays) ? 'legacy-anchor' : 'device');
   const currentIndex = getCurrentChallengeIndex(challengeStartDateKey);
   const fallbackLength = Array.isArray(loadedDays) ? Math.max(CHALLENGE_LENGTH, currentIndex + 1, loadedDays.length) : Math.max(CHALLENGE_LENGTH, currentIndex + 1);
-  const fallback = createInitialDays(fallbackLength, challengeStartDateKey, loadedDays?.[0]?.challengeLength || CHALLENGE_LENGTH);
+  const fallback = createInitialDays(fallbackLength, challengeStartDateKey, loadedDays?.[0]?.challengeLength || CHALLENGE_LENGTH, challengeStartSource);
   if (!Array.isArray(loadedDays)) return fallback;
   return fallback.map((baseDay, index) => {
     const savedDay = loadedDays[index] || {};
@@ -102,6 +106,7 @@ const normalizeDays = (loadedDays) => {
       date: baseDay.date,
       challengeDay: savedDay.challengeDay ?? baseDay.challengeDay,
       challengeId: savedDay.challengeId ?? baseDay.challengeId,
+      ...(index === 0 ? { challengeStartDate: challengeStartDateKey, challengeStartSource, challengeLength: loadedDays?.[0]?.challengeLength || CHALLENGE_LENGTH } : {}),
       feeling: savedDay.feeling || baseDay.feeling,
       workout: Array.isArray(savedDay.workout) ? savedDay.workout : [],
       tasks: Array.isArray(savedDay.tasks) ? savedDay.tasks : [],
@@ -127,7 +132,7 @@ const getScoreState = (score) => {
 
 export default function ResetFocusTracker() {
   const [days, setDays] = useState(loadDays);
-  const [selectedDayIndex, setSelectedDayIndex] = useState(getSavedSelectedDayIndex);
+  const [selectedDayIndex, setSelectedDayIndex] = useState(() => getInitialSelectedDayIndex(loadDays()));
   const [customExercises, setCustomExercises] = useState(() => safeLoad(CUSTOM_EXERCISES_KEY, {}));
   const [exerciseRenames, setExerciseRenames] = useState(() => safeLoad(EXERCISE_RENAMES_KEY, {}));
   const [selectedMuscle, setSelectedMuscle] = useState('Pecho');
