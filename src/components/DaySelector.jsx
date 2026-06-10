@@ -27,7 +27,7 @@ const buildMonthCells = (visibleMonth) => {
   return [...Array(mondayFirstOffset).fill(null), ...calendarDays];
 };
 
-export default function DaySelector({ days, level, selectedDayIndex, setSelectedDayIndex, scoreForDay, getScoreState }) {
+export default function DaySelector({ days, level, selectedDayIndex, setSelectedDayIndex, selectCalendarDate, scoreForDay, getScoreState }) {
   const selectedDay = days[selectedDayIndex];
   const [visibleMonth, setVisibleMonth] = useState(() => {
     const selectedDate = parseDate(selectedDay.date);
@@ -36,6 +36,7 @@ export default function DaySelector({ days, level, selectedDayIndex, setSelected
   const todayKey = toDateKey(new Date());
   const monthCells = buildMonthCells(visibleMonth);
   const dayByDate = useMemo(() => new Map(days.map((day, index) => [day.date, { day, index }])), [days]);
+  const firstDate = parseDate(days[0].date);
 
   useEffect(() => {
     const selectedDate = parseDate(selectedDay.date);
@@ -85,15 +86,24 @@ export default function DaySelector({ days, level, selectedDayIndex, setSelected
 
           const planDay = dayByDate.get(cell.dateKey);
           const isToday = cell.dateKey === todayKey;
+          const isBeforeTracking = parseDate(cell.dateKey) < firstDate;
 
           if (!planDay) {
-            return (
-              <div
-                key={cell.dateKey}
-                className={`aspect-square rounded-2xl border border-white/[0.04] bg-black/20 p-1 text-center text-zinc-700 ${isToday ? 'outline outline-1 outline-offset-2 outline-emerald-300/50' : ''}`}
-              >
+            const className = `aspect-square rounded-2xl border border-white/[0.04] bg-black/20 p-1 text-center ${isBeforeTracking ? 'text-zinc-800' : 'text-zinc-600 transition active:scale-95 hover:bg-white/5'} ${isToday ? 'outline outline-1 outline-offset-2 outline-emerald-300/50' : ''}`;
+            return isBeforeTracking ? (
+              <div key={cell.dateKey} className={className}>
                 <span className="block text-xs font-black leading-none">{cell.calendarDay}</span>
               </div>
+            ) : (
+              <button
+                key={cell.dateKey}
+                type="button"
+                onClick={() => selectCalendarDate(cell.dateKey)}
+                className={className}
+                aria-label={`Seleccionar ${cell.calendarDay}`}
+              >
+                <span className="block text-xs font-black leading-none">{cell.calendarDay}</span>
+              </button>
             );
           }
 
