@@ -1,6 +1,8 @@
 const clampPercent = (value) => Math.max(0, Math.min(100, value || 0));
 
 export default function ChallengeSummary({ summary }) {
+  const challengeLength = summary.challengeLength || 30;
+
   return (
     <section className="mb-5 space-y-4">
       <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black p-5 shadow-2xl shadow-black/40">
@@ -8,7 +10,7 @@ export default function ChallengeSummary({ summary }) {
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-300">Challenge complete</p>
             <h2 className="mt-2 text-3xl font-black leading-tight">Performance review</h2>
-            <p className="mt-1 text-sm text-zinc-400">30-day consistency report</p>
+            <p className="mt-1 text-sm text-zinc-400">{challengeLength}-day consistency report</p>
           </div>
           <div className="rounded-3xl border border-emerald-300/20 bg-emerald-400/10 px-3 py-2 text-right">
             <p className="text-xl font-black text-emerald-300">{summary.wins}</p>
@@ -31,7 +33,7 @@ export default function ChallengeSummary({ summary }) {
             <h3 className="text-xl font-black">Momentum</h3>
             <p className="text-sm text-zinc-400">Score diario durante el challenge.</p>
           </div>
-          <p className="text-xs font-bold uppercase text-zinc-500">30 días</p>
+          <p className="text-xs font-bold uppercase text-zinc-500">{challengeLength} días</p>
         </div>
         <div className="flex h-24 items-end gap-1.5 rounded-3xl border border-white/10 bg-black/30 p-3">
           {summary.scores.map((score, index) => {
@@ -60,7 +62,7 @@ export default function ChallengeSummary({ summary }) {
         </div>
         <div className="space-y-3">
           {[...summary.habitStats].sort((a, b) => b.percent - a.percent).map((habit) => (
-            <HabitBreakdown key={habit.name} habit={habit} />
+            <HabitBreakdown key={habit.name} habit={habit} challengeLength={challengeLength} />
           ))}
         </div>
       </section>
@@ -124,7 +126,7 @@ function HabitRank({ title, habits, tone }) {
   );
 }
 
-function HabitBreakdown({ habit }) {
+function HabitBreakdown({ habit, challengeLength }) {
   return (
     <div className="rounded-3xl border border-white/10 bg-black/30 p-3">
       <div className="mb-2 flex items-center justify-between gap-3">
@@ -135,7 +137,7 @@ function HabitBreakdown({ habit }) {
         <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-800">
           <div className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-emerald-300 to-amber-300" style={{ width: `${habit.percent}%` }} />
         </div>
-        <p className="w-12 text-right text-[10px] font-bold text-zinc-500">{habit.count}/30</p>
+        <p className="w-12 text-right text-[10px] font-bold text-zinc-500">{habit.count}/{challengeLength}</p>
       </div>
     </div>
   );

@@ -15,8 +15,8 @@ const CUSTOM_EXERCISES_KEY = 'dopamine-reset-custom-exercises';
 const EXERCISE_RENAMES_KEY = 'dopamine-reset-exercise-renames';
 const LEGACY_STORAGE_KEY = 'dopamine-reset-data';
 const CHALLENGE_LENGTH = 30;
-const ANCHOR_DATE_KEY = '2026-05-28';
-const ANCHOR_DAY_INDEX = 17;
+const LEGACY_ANCHOR_DATE_KEY = '2026-05-28';
+const LEGACY_ANCHOR_DAY_INDEX = 17;
 const tabs = [
   { id: 'dashboard', label: 'Dashboard', icon: '⌂' },
   { id: 'habits', label: 'Hábitos', icon: '✓' },
@@ -38,28 +38,35 @@ const addDays = (date, amount) => {
 };
 const daysBetween = (startDateKey, endDateKey) => Math.round((parseDateKey(endDateKey) - parseDateKey(startDateKey)) / 86400000);
 const parseDateKey = (dateKey) => new Date(`${dateKey}T00:00:00`);
-const getCurrentChallengeIndex = () => Math.max(0, ANCHOR_DAY_INDEX + daysBetween(ANCHOR_DATE_KEY, toDateKey(new Date())));
-const getChallengeStartDate = () => addDays(parseDateKey(ANCHOR_DATE_KEY), -ANCHOR_DAY_INDEX);
-const getSavedSelectedDayIndex = () => {
+const getLegacyChallengeStartDateKey = () => toDateKey(addDays(parseDateKey(LEGACY_ANCHOR_DATE_KEY), -LEGACY_ANCHOR_DAY_INDEX));
+const getCurrentChallengeIndex = (startDateKey = toDateKey(new Date())) => Math.max(0, daysBetween(startDateKey, toDateKey(new Date())));
+const getSavedSelectedDayIndex = (fallback = 0) => {
   try {
     const saved = localStorage.getItem(SELECTED_DAY_KEY);
-    const parsed = saved !== null ? Number(saved) : getCurrentChallengeIndex();
-    return Number.isFinite(parsed) && parsed >= 0 ? parsed : getCurrentChallengeIndex();
+    const parsed = saved !== null ? Number(saved) : fallback;
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
   } catch {
-    return getCurrentChallengeIndex();
+    return fallback;
   }
 };
-const createDay = (dayNumber, dateKey) => ({
+const getChallengeStartDateKey = (loadedDays) => {
+  if (Array.isArray(loadedDays) && loadedDays[0]?.challengeStartDate) return loadedDays[0].challengeStartDate;
+  if (Array.isArray(loadedDays) && loadedDays[0]?.date) return loadedDays[0].date;
+  if (Array.isArray(loadedDays)) return getLegacyChallengeStartDateKey();
+  return toDateKey(new Date());
+};
+const createDay = (dayNumber, dateKey, challengeStartDateKey, challengeLength = CHALLENGE_LENGTH) => ({
   day: dayNumber,
   date: dateKey,
+  ...(dayNumber === 1 ? { challengeStartDate: challengeStartDateKey, challengeLength } : {}),
   checks: Array(habits.length).fill(false),
   feeling: '🙂 Bien',
   workout: [],
   tasks: [],
 });
-const createInitialDays = (length = CHALLENGE_LENGTH) => {
-  const startDate = getChallengeStartDate();
-  return Array.from({ length }, (_, i) => createDay(i + 1, toDateKey(addDays(startDate, i))));
+const createInitialDays = (length = CHALLENGE_LENGTH, startDateKey = toDateKey(new Date()), challengeLength = CHALLENGE_LENGTH) => {
+  const startDate = parseDateKey(startDateKey);
+  return Array.from({ length }, (_, i) => createDay(i + 1, toDateKey(addDays(startDate, i)), startDateKey, challengeLength));
 };
 const safeLoad = (key, fallback) => { try { const saved = localStorage.getItem(key); return saved ? JSON.parse(saved) : fallback; } catch { return fallback; } };
 const safeSave = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
@@ -78,8 +85,10 @@ const createInitialSet = (trackingType, unit = 'lbs') => {
   return { id: Date.now() + Math.random(), reps: '', weight: '', unit };
 };
 const normalizeDays = (loadedDays) => {
-  const fallbackLength = Array.isArray(loadedDays) ? Math.max(CHALLENGE_LENGTH, getCurrentChallengeIndex() + 1, loadedDays.length) : Math.max(CHALLENGE_LENGTH, getCurrentChallengeIndex() + 1);
-  const fallback = createInitialDays(fallbackLength);
+  const challengeStartDateKey = getChallengeStartDateKey(loadedDays);
+  const currentIndex = getCurrentChallengeIndex(challengeStartDateKey);
+  const fallbackLength = Array.isArray(loadedDays) ? Math.max(CHALLENGE_LENGTH, currentIndex + 1, loadedDays.length) : Math.max(CHALLENGE_LENGTH, currentIndex + 1);
+  const fallback = createInitialDays(fallbackLength, challengeStartDateKey, loadedDays?.[0]?.challengeLength || CHALLENGE_LENGTH);
   if (!Array.isArray(loadedDays)) return fallback;
   return fallback.map((baseDay, index) => {
     const savedDay = loadedDays[index] || {};
@@ -104,7 +113,7 @@ const loadDays = () => {
     safeSave(STORAGE_KEY, migrated);
     return migrated;
   }
-  return createInitialDays(Math.max(CHALLENGE_LENGTH, getCurrentChallengeIndex() + 1));
+  return createInitialDays();
 };
 const getScoreState = (score) => {
   if (score >= 13) return { emoji: '🔥', label: 'Día élite', color: 'text-emerald-300', ring: 'ring-emerald-400/40', bg: 'bg-emerald-500/10' };
@@ -131,10 +140,11 @@ export default function ResetFocusTracker() {
 
   const selectedDay = days[selectedDayIndex];
   const setDaysAndSave = (updater) => setDays((current) => { const updated = typeof updater === 'function' ? updater(current) : updater; safeSave(STORAGE_KEY, updated); return updated; });
-  const resetTracker = () => { if (!window.confirm('¿Seguro que quieres reiniciar todo el progreso?')) return; const fresh = createInitialDays(Math.max(CHALLENGE_LENGTH, getCurrentChallengeIndex() + 1)); setDays(fresh); localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(SELECTED_DAY_KEY); setSelectedDayIndex(getCurrentChallengeIndex()); setShowChallengeSummary(false); };
+  const resetTracker = () => { if (!window.confirm('¿Seguro que quieres reiniciar todo el progreso?')) return; const fresh = createInitialDays(); setDays(fresh); localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(SELECTED_DAY_KEY); setSelectedDayIndex(0); setShowChallengeSummary(false); };
   const scoreForDay = (day) => day.checks.reduce((total, checked, i) => (checked ? total + habits[i].points : total), 0);
   const scores = days.map(scoreForDay);
-  const challengeDays = days.slice(0, CHALLENGE_LENGTH);
+  const activeChallengeLength = days[0]?.challengeLength || CHALLENGE_LENGTH;
+  const challengeDays = days.slice(0, activeChallengeLength);
   const challengeScores = challengeDays.map(scoreForDay);
   const challengeCompleted = Boolean(days[0]?.challengeCompleted);
   const selectedScore = scoreForDay(selectedDay);
@@ -168,7 +178,7 @@ export default function ResetFocusTracker() {
   const statsData = { scores, selectedDayIndex, winCount, eliteCount, progressCount, lowCount, averageScore, bestDay, lowestDay, currentStreak, topHabits, weakHabits, workoutSummary: { totalExercises: workoutEntries.length, workoutDays, lastWorkout }, getScoreState };
   const challengeHabitStats = habits.map((habit, habitIndex) => {
     const count = challengeDays.filter((day) => day.checks[habitIndex]).length;
-    const percent = Math.round((count / CHALLENGE_LENGTH) * 100);
+    const percent = Math.round((count / activeChallengeLength) * 100);
     return { name: habit.name, icon: habit.icon, count, percent };
   });
   const challengeWins = challengeScores.filter((score) => score >= 8).length;
@@ -191,6 +201,7 @@ export default function ResetFocusTracker() {
     eliteDays: challengeEliteDays,
     longestStreak: challengeLongestStreak,
     workoutDays: challengeWorkoutDays,
+    challengeLength: activeChallengeLength,
     completedAt: days[0]?.challengeCompletedAt,
     getScoreState,
   };
@@ -217,10 +228,12 @@ export default function ResetFocusTracker() {
     if (selectedDate < firstDate) return;
 
     const next = [...days];
+    const challengeStartDateKey = days[0]?.challengeStartDate || days[0]?.date || toDateKey(new Date());
+    const challengeLength = days[0]?.challengeLength || CHALLENGE_LENGTH;
     let cursor = parseDateKey(next[next.length - 1].date);
     while (cursor < selectedDate) {
       cursor = addDays(cursor, 1);
-      next.push(createDay(next.length + 1, toDateKey(cursor)));
+      next.push(createDay(next.length + 1, toDateKey(cursor), challengeStartDateKey, challengeLength));
     }
     setDaysAndSave(next);
     setSelectedDayIndex(next.findIndex((day) => day.date === dateKey));
@@ -299,7 +312,7 @@ export default function ResetFocusTracker() {
     { label: 'Hábitos', value: `${completedHabits}/${habits.length}`, accent: 'text-sky-300' },
     { label: 'Tasks', value: `${completedTasks}/${(selectedDay.tasks || []).length}`, accent: 'text-violet-300' },
   ];
-  const canCompleteChallenge = selectedDayIndex >= CHALLENGE_LENGTH - 1;
+  const canCompleteChallenge = selectedDayIndex >= activeChallengeLength - 1;
 
   const renderActiveTab = () => {
     if (activeTab === 'habits') {
@@ -342,7 +355,7 @@ export default function ResetFocusTracker() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-lg font-black">Challenge</h3>
-              <p className="text-sm text-zinc-400">{challengeCompleted ? 'Tu primer challenge ya está culminado.' : `Día ${Math.min(selectedDayIndex + 1, CHALLENGE_LENGTH)} de ${CHALLENGE_LENGTH}`}</p>
+              <p className="text-sm text-zinc-400">{challengeCompleted ? 'Tu primer challenge ya está culminado.' : `Día ${Math.min(selectedDayIndex + 1, activeChallengeLength)} de ${activeChallengeLength}`}</p>
             </div>
             {challengeCompleted ? (
               <button type="button" onClick={() => setShowChallengeSummary((current) => !current)} className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-black transition active:scale-95">
@@ -355,7 +368,7 @@ export default function ResetFocusTracker() {
             ) : (
               <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-right">
                 <p className="text-xs font-bold uppercase text-zinc-500">Final</p>
-                <p className="text-sm font-black text-zinc-300">Día 30</p>
+                <p className="text-sm font-black text-zinc-300">Día {activeChallengeLength}</p>
               </div>
             )}
           </div>
