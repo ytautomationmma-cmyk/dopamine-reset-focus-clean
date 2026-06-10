@@ -14,6 +14,11 @@ const toDateKey = (date) => {
 const addMonths = (date, amount) => new Date(date.getFullYear(), date.getMonth() + amount, 1);
 
 const formatMonth = (date) => date.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+const formatSelectedLabel = (day) => {
+  if (day?.challengeDay) return `Día ${day.challengeDay}`;
+  if (!day?.date) return '--';
+  return parseDate(day.date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+};
 
 const buildMonthCells = (visibleMonth) => {
   const firstDay = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
@@ -52,7 +57,7 @@ export default function DaySelector({ days, level, selectedDayIndex, setSelected
         </div>
         <div className="rounded-2xl border border-white/10 bg-black/30 px-3 py-2 text-right">
           <p className="text-xs font-bold text-zinc-500">Actual</p>
-          <p className="text-sm font-black text-white">Día {selectedDay?.day}</p>
+          <p className="text-sm font-black capitalize text-white">{formatSelectedLabel(selectedDay)}</p>
         </div>
       </div>
 
@@ -110,7 +115,23 @@ export default function DaySelector({ days, level, selectedDayIndex, setSelected
           const score = scoreForDay(planDay.day);
           const state = getScoreState(score);
           const isSelected = planDay.index === selectedDayIndex;
-          const dayTone = score > 0 ? `${state.bg} ${state.color} ring-1 ${state.ring}` : 'bg-zinc-800/80 text-zinc-500';
+          const isChallengeDay = Boolean(planDay.day.challengeDay);
+
+          if (!isChallengeDay) {
+            return (
+              <button
+                key={cell.dateKey}
+                type="button"
+                onClick={() => setSelectedDayIndex(planDay.index)}
+                className={`aspect-square rounded-2xl border p-1 text-center transition active:scale-95 ${isSelected ? 'border-white bg-white text-black shadow-lg shadow-white/10' : score > 0 ? 'border-emerald-300/30 bg-emerald-400/10 text-emerald-200' : 'border-white/[0.04] bg-black/20 text-zinc-600 hover:bg-white/5'} ${isToday && !isSelected ? 'outline outline-1 outline-offset-2 outline-emerald-300/50' : ''}`}
+                aria-label={`Seleccionar ${cell.calendarDay}`}
+              >
+                <span className="block text-xs font-black leading-none">{cell.calendarDay}</span>
+              </button>
+            );
+          }
+
+          const dayTone = score > 0 ? `${state.bg} ${state.color} ring-1 ${state.ring}` : 'bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-400/25';
 
           return (
             <button
@@ -118,10 +139,10 @@ export default function DaySelector({ days, level, selectedDayIndex, setSelected
               type="button"
               onClick={() => setSelectedDayIndex(planDay.index)}
               className={`aspect-square rounded-2xl p-1 text-center transition active:scale-95 ${isSelected ? 'bg-white text-black shadow-lg shadow-white/10' : dayTone} ${isToday && !isSelected ? 'outline outline-1 outline-offset-2 outline-emerald-300/60' : ''}`}
-              aria-label={`Seleccionar día ${planDay.day.day}`}
+              aria-label={`Seleccionar día ${planDay.day.challengeDay}`}
             >
               <span className="block text-[10px] font-black leading-none opacity-70">{cell.calendarDay}</span>
-              <span className="mt-1 block text-sm font-black leading-none">{planDay.day.day}</span>
+              <span className="mt-1 block text-sm font-black leading-none">{planDay.day.challengeDay}</span>
               <span className="mt-1 block text-[8px] font-bold uppercase leading-none opacity-60">día</span>
             </button>
           );

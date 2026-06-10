@@ -10,6 +10,7 @@ export default function TaskTracker({ selectedDay, addTask, toggleTask, removeTa
   const [taskTitle, setTaskTitle] = useState('');
   const tasks = selectedDay.tasks || [];
   const completedTasks = tasks.filter((task) => task.done).length;
+  const title = selectedDay.challengeDay ? `Día ${selectedDay.challengeDay}` : 'Registro diario';
 
   const submitTask = () => {
     addTask(taskTitle);
@@ -21,7 +22,7 @@ export default function TaskTracker({ selectedDay, addTask, toggleTask, removeTa
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-violet-300">Tasks</p>
-          <h1 className="mt-1 text-3xl font-black">Día {selectedDay.day}</h1>
+          <h1 className="mt-1 text-3xl font-black">{title}</h1>
           <p className="mt-1 text-sm capitalize text-zinc-400">{formatFullDate(selectedDay.date)}</p>
         </div>
         <div className="rounded-3xl border border-white/10 bg-black/40 px-4 py-3 text-right">

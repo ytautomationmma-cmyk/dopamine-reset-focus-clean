@@ -1,8 +1,15 @@
+const formatFullDate = (dateKey) => {
+  if (!dateKey) return 'Fecha no asignada';
+  return new Date(`${dateKey}T00:00:00`).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+};
+
 export default function HabitTracker({ selectedDay, habits, completedHabits, toggleCheck, updateFeeling }) {
+  const title = selectedDay.challengeDay ? `Día ${selectedDay.challengeDay}` : 'Registro diario';
+
   return (
     <main className="rounded-[2rem] border border-white/10 bg-zinc-900/80 p-5 shadow-2xl shadow-black/30">
       <div className="mb-5 flex items-center justify-between gap-3">
-        <div><h2 className="text-2xl font-black">Día {selectedDay.day}</h2><p className="text-sm text-zinc-400">{completedHabits}/{habits.length} hábitos completados</p></div>
+        <div><h2 className="text-2xl font-black">{title}</h2><p className="text-sm capitalize text-zinc-400">{formatFullDate(selectedDay.date)} · {completedHabits}/{habits.length} hábitos completados</p></div>
         <select value={selectedDay.feeling} onChange={(e) => updateFeeling(e.target.value)} className="rounded-2xl border border-white/10 bg-black px-3 py-3 text-sm outline-none"><option>🔥 Imparable</option><option>💪 Enfocado</option><option>🙂 Bien</option><option>🧭 Recalibrando</option><option>😵 Distraído</option></select>
       </div>
       <div className="space-y-3">

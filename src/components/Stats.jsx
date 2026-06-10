@@ -1,4 +1,5 @@
 export default function Stats({
+  days,
   scores,
   selectedDayIndex,
   winCount,
@@ -16,6 +17,9 @@ export default function Stats({
 }) {
   const visibleScores = scores.slice(0, selectedDayIndex + 1);
   const lastWorkout = workoutSummary.lastWorkout;
+  const selectedDay = days[selectedDayIndex];
+  const selectedLabel = selectedDay?.challengeDay ? `Día ${selectedDay.challengeDay}` : formatShortDate(selectedDay?.date);
+  const formatStatDay = (day) => day?.day ? `Día ${day.day}` : formatShortDate(day?.date);
 
   return (
     <main className="space-y-5">
@@ -24,7 +28,7 @@ export default function Stats({
         <div className="flex items-end justify-between gap-4">
           <div>
             <h2 className="text-3xl font-black leading-tight">Tu progreso</h2>
-            <p className="mt-1 text-sm text-zinc-400">Día {selectedDayIndex + 1} de 30</p>
+            <p className="mt-1 text-sm capitalize text-zinc-400">{selectedLabel}</p>
           </div>
           <div className="rounded-3xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-right">
             <p className="text-3xl font-black text-emerald-300">{currentStreak}</p>
@@ -36,17 +40,17 @@ export default function Stats({
       <section className="grid grid-cols-2 gap-3">
         <StatCard label="Promedio" value={averageScore} hint="score" accent="text-sky-300" />
         <StatCard label="Wins" value={winCount} hint={`${eliteCount} élite · ${progressCount} progreso`} accent="text-emerald-300" />
-        <StatCard label="Mejor día" value={bestDay.day ? `Día ${bestDay.day}` : '--'} hint={`${bestDay.score} puntos`} accent="text-orange-300" />
-        <StatCard label="Días bajos" value={lowCount} hint={lowestDay.day ? `mínimo: día ${lowestDay.day}` : 'sin datos'} accent="text-red-300" />
+        <StatCard label="Mejor día" value={bestDay.score ? formatStatDay(bestDay) : '--'} hint={`${bestDay.score} puntos`} accent="text-orange-300" />
+        <StatCard label="Días bajos" value={lowCount} hint={lowestDay.score ? `mínimo: ${formatStatDay(lowestDay)}` : 'sin datos'} accent="text-red-300" />
       </section>
 
       <section className="rounded-[2rem] border border-white/10 bg-zinc-900/80 p-5 shadow-2xl shadow-black/30">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-xl font-black">Mapa de 30 días</h3>
+            <h3 className="text-xl font-black">Mapa de días</h3>
             <p className="text-sm text-zinc-400">Cada bloque cambia según el score del día.</p>
           </div>
-          <p className="text-xs font-bold uppercase text-zinc-500">{winCount}/30 wins</p>
+          <p className="text-xs font-bold uppercase text-zinc-500">{winCount}/{visibleScores.length} wins</p>
         </div>
         <div className="grid grid-cols-10 gap-2">
           {scores.map((score, index) => {
@@ -54,7 +58,7 @@ export default function Stats({
             const isFuture = index > selectedDayIndex;
             return (
               <div key={index} className={`aspect-square rounded-xl border text-[10px] font-black ${isFuture ? 'border-white/5 bg-zinc-950 text-zinc-700' : score > 0 ? `border-white/10 ${state.bg} ${state.color}` : 'border-white/5 bg-zinc-800 text-zinc-500'}`}>
-                <div className="grid h-full place-items-center">{index + 1}</div>
+                <div className="grid h-full place-items-center">{days[index]?.challengeDay || new Date(`${days[index]?.date}T00:00:00`).getDate()}</div>
               </div>
             );
           })}
@@ -81,7 +85,7 @@ export default function Stats({
         <div className="mt-3 rounded-3xl border border-white/10 bg-black/40 p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">Último registro</p>
           {lastWorkout ? (
-            <p className="mt-1 text-sm text-zinc-300">Día {lastWorkout.day} · {lastWorkout.muscle} · <span className="font-bold text-white">{lastWorkout.exercise}</span></p>
+            <p className="mt-1 text-sm text-zinc-300">{lastWorkout.day ? `Día ${lastWorkout.day}` : formatShortDate(lastWorkout.date)} · {lastWorkout.muscle} · <span className="font-bold text-white">{lastWorkout.exercise}</span></p>
           ) : (
             <p className="mt-1 text-sm text-zinc-500">Todavía no hay ejercicios registrados.</p>
           )}
@@ -89,6 +93,11 @@ export default function Stats({
       </section>
     </main>
   );
+}
+
+function formatShortDate(dateKey) {
+  if (!dateKey) return '--';
+  return new Date(`${dateKey}T00:00:00`).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
 }
 
 function StatCard({ label, value, hint, accent }) {

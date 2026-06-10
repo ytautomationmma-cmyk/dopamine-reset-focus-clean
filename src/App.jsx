@@ -58,6 +58,8 @@ const getChallengeStartDateKey = (loadedDays) => {
 const createDay = (dayNumber, dateKey, challengeStartDateKey, challengeLength = CHALLENGE_LENGTH) => ({
   day: dayNumber,
   date: dateKey,
+  challengeDay: dayNumber <= challengeLength ? dayNumber : null,
+  challengeId: dayNumber <= challengeLength ? 'initial-challenge' : null,
   ...(dayNumber === 1 ? { challengeStartDate: challengeStartDateKey, challengeLength } : {}),
   checks: Array(habits.length).fill(false),
   feeling: '🙂 Bien',
@@ -98,6 +100,8 @@ const normalizeDays = (loadedDays) => {
       ...savedDay,
       checks: habits.map((_, habitIndex) => Boolean(savedChecks[habitIndex])),
       date: baseDay.date,
+      challengeDay: savedDay.challengeDay ?? baseDay.challengeDay,
+      challengeId: savedDay.challengeId ?? baseDay.challengeId,
       feeling: savedDay.feeling || baseDay.feeling,
       workout: Array.isArray(savedDay.workout) ? savedDay.workout : [],
       tasks: Array.isArray(savedDay.tasks) ? savedDay.tasks : [],
@@ -131,7 +135,7 @@ export default function ResetFocusTracker() {
   const [newExerciseName, setNewExerciseName] = useState('');
   const [renameExerciseName, setRenameExerciseName] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [showChallengeSummary, setShowChallengeSummary] = useState(() => Boolean(loadDays()[0]?.challengeCompleted));
+  const [dashboardView, setDashboardView] = useState('home');
 
   useEffect(() => safeSave(STORAGE_KEY, days), [days]);
   useEffect(() => { try { localStorage.setItem(SELECTED_DAY_KEY, String(selectedDayIndex)); } catch {} }, [selectedDayIndex]);
@@ -140,7 +144,7 @@ export default function ResetFocusTracker() {
 
   const selectedDay = days[selectedDayIndex];
   const setDaysAndSave = (updater) => setDays((current) => { const updated = typeof updater === 'function' ? updater(current) : updater; safeSave(STORAGE_KEY, updated); return updated; });
-  const resetTracker = () => { if (!window.confirm('¿Seguro que quieres reiniciar todo el progreso?')) return; const fresh = createInitialDays(); setDays(fresh); localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(SELECTED_DAY_KEY); setSelectedDayIndex(0); setShowChallengeSummary(false); };
+  const resetTracker = () => { if (!window.confirm('¿Seguro que quieres reiniciar todo el progreso?')) return; const fresh = createInitialDays(); setDays(fresh); localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(SELECTED_DAY_KEY); setSelectedDayIndex(0); setDashboardView('home'); };
   const scoreForDay = (day) => day.checks.reduce((total, checked, i) => (checked ? total + habits[i].points : total), 0);
   const scores = days.map(scoreForDay);
   const activeChallengeLength = days[0]?.challengeLength || CHALLENGE_LENGTH;
@@ -160,8 +164,8 @@ export default function ResetFocusTracker() {
   const trackedDays = days.slice(0, selectedDayIndex + 1);
   const activeScores = scoresUntilSelectedDay.filter((score) => score > 0);
   const averageScore = activeScores.length ? (activeScores.reduce((sum, score) => sum + score, 0) / activeScores.length).toFixed(1) : '0.0';
-  const bestDay = trackedDays.reduce((best, day, index) => scoresUntilSelectedDay[index] > best.score ? { day: day.day, score: scoresUntilSelectedDay[index] } : best, { day: 0, score: 0 });
-  const scoredDays = trackedDays.map((day, index) => ({ day: day.day, score: scoresUntilSelectedDay[index] })).filter((day) => day.score > 0);
+  const bestDay = trackedDays.reduce((best, day, index) => scoresUntilSelectedDay[index] > best.score ? { day: day.challengeDay, date: day.date, score: scoresUntilSelectedDay[index] } : best, { day: null, date: null, score: 0 });
+  const scoredDays = trackedDays.map((day, index) => ({ day: day.challengeDay, date: day.date, score: scoresUntilSelectedDay[index] })).filter((day) => day.score > 0);
   const lowestDay = scoredDays.reduce((lowest, day) => day.score < lowest.score ? day : lowest, scoredDays[0] || { day: 0, score: 0 });
   const currentStreak = scoresUntilSelectedDay.reduceRight((streak, score) => (streak.active && score >= 8 ? { count: streak.count + 1, active: true } : { count: streak.count, active: false }), { count: 0, active: true }).count;
   const habitStats = habits.map((habit, habitIndex) => {
@@ -171,11 +175,11 @@ export default function ResetFocusTracker() {
   });
   const topHabits = [...habitStats].sort((a, b) => b.percent - a.percent).slice(0, 3);
   const weakHabits = [...habitStats].sort((a, b) => a.percent - b.percent).slice(0, 3);
-  const workoutEntries = trackedDays.flatMap((day) => (day.workout || []).map((item) => ({ day: day.day, ...item })));
+  const workoutEntries = trackedDays.flatMap((day) => (day.workout || []).map((item) => ({ day: day.challengeDay, date: day.date, ...item })));
   const workoutDays = trackedDays.filter((day) => (day.workout || []).length > 0).length;
   const lastWorkoutDay = [...trackedDays].reverse().find((day) => (day.workout || []).length > 0);
-  const lastWorkout = lastWorkoutDay ? { day: lastWorkoutDay.day, ...lastWorkoutDay.workout[0] } : null;
-  const statsData = { scores, selectedDayIndex, winCount, eliteCount, progressCount, lowCount, averageScore, bestDay, lowestDay, currentStreak, topHabits, weakHabits, workoutSummary: { totalExercises: workoutEntries.length, workoutDays, lastWorkout }, getScoreState };
+  const lastWorkout = lastWorkoutDay ? { day: lastWorkoutDay.challengeDay, date: lastWorkoutDay.date, ...lastWorkoutDay.workout[0] } : null;
+  const statsData = { days, scores, selectedDayIndex, winCount, eliteCount, progressCount, lowCount, averageScore, bestDay, lowestDay, currentStreak, topHabits, weakHabits, workoutSummary: { totalExercises: workoutEntries.length, workoutDays, lastWorkout }, getScoreState };
   const challengeHabitStats = habits.map((habit, habitIndex) => {
     const count = challengeDays.filter((day) => day.checks[habitIndex]).length;
     const percent = Math.round((count / activeChallengeLength) * 100);
@@ -191,6 +195,8 @@ export default function ResetFocusTracker() {
     return { current, max: Math.max(best.max, current) };
   }, { current: 0, max: 0 }).max;
   const challengeSummaryData = {
+    id: 'initial-challenge',
+    title: 'Reset & Focus',
     days: challengeDays,
     scores: challengeScores,
     habitStats: challengeHabitStats,
@@ -202,6 +208,8 @@ export default function ResetFocusTracker() {
     longestStreak: challengeLongestStreak,
     workoutDays: challengeWorkoutDays,
     challengeLength: activeChallengeLength,
+    startDate: challengeDays[0]?.date,
+    endDate: challengeDays[activeChallengeLength - 1]?.date,
     completedAt: days[0]?.challengeCompletedAt,
     getScoreState,
   };
@@ -214,7 +222,7 @@ export default function ResetFocusTracker() {
   const completeChallenge = () => {
     if (!window.confirm('¿Quieres culminar este challenge y ver tu resumen final?')) return;
     setDaysAndSave((current) => current.map((day, index) => index === 0 ? { ...day, challengeCompleted: true, challengeCompletedAt: toDateKey(new Date()) } : day));
-    setShowChallengeSummary(true);
+    setDashboardView('challengeReport');
   };
   const selectCalendarDate = (dateKey) => {
     const existingIndex = days.findIndex((day) => day.date === dateKey);
@@ -257,7 +265,7 @@ export default function ResetFocusTracker() {
   };
   const addCustomExercise = () => { const clean = newExerciseName.trim(); if (!clean) return; const current = getExercisesForMuscle(selectedMuscle); const existing = current.find((ex) => ex.toLowerCase() === clean.toLowerCase()); if (existing) { setSelectedExercise(existing); setNewExerciseName(''); return; } setCustomExercises((cur) => ({ ...cur, [selectedMuscle]: [...(cur[selectedMuscle] || []), clean] })); setSelectedExercise(clean); setNewExerciseName(''); };
   const addWorkoutExercise = () => { const muscle = muscleGroups.find((g) => g.name === selectedMuscle) || muscleGroups[0]; const exerciseName = selectedExercise || getExercisesForMuscle(muscle.name)[0]; const trackingType = getExerciseTrackingType(muscle.name, exerciseName); setDaysAndSave((current) => current.map((day, index) => index === selectedDayIndex ? { ...day, workout: [{ id: Date.now() + Math.random(), muscle: muscle.name, exercise: exerciseName, type: trackingType === 'cardio' ? 'cardio' : 'strength', trackingType, setsData: trackingType === 'cardio' ? [] : [createInitialSet(trackingType)], cardioData: { time: '', distance: '', distanceUnit: 'km' } }, ...(day.workout || [])] } : day)); };
-  const getExerciseHistory = (exerciseName) => { const history = []; days.forEach((day) => (day.workout || []).forEach((item) => { const strength = (item.setsData || []).some((set) => set.reps || set.weight || set.duration); const cardio = item.cardioData?.time || item.cardioData?.distance; if (item.exercise === exerciseName && (strength || cardio)) history.push({ day: day.day, ...item }); })); return history; };
+  const getExerciseHistory = (exerciseName) => { const history = []; days.forEach((day) => (day.workout || []).forEach((item) => { const strength = (item.setsData || []).some((set) => set.reps || set.weight || set.duration); const cardio = item.cardioData?.time || item.cardioData?.distance; if (item.exercise === exerciseName && (strength || cardio)) history.push({ day: day.challengeDay, challengeDay: day.challengeDay, date: day.date, ...item }); })); return history; };
   const lastExerciseEntry = getExerciseHistory(selectedExercise).at(-1);
   const selectedExerciseHistory = getExerciseHistory(selectedExercise);
   const addSetToExercise = (exerciseId) => setDaysAndSave((current) => current.map((day, dayIndex) => dayIndex === selectedDayIndex ? { ...day, workout: (day.workout || []).map((item) => { if (item.id !== exerciseId) return item; const trackingType = item.trackingType || getExerciseTrackingType(item.muscle, item.exercise); const currentSets = item.setsData?.length ? item.setsData : [createInitialSet(trackingType)]; return { ...item, trackingType, setsData: [...currentSets, createInitialSet(trackingType, currentSets.at(-1)?.unit || 'lbs')] }; }) } : day));
@@ -313,6 +321,7 @@ export default function ResetFocusTracker() {
     { label: 'Tasks', value: `${completedTasks}/${(selectedDay.tasks || []).length}`, accent: 'text-violet-300' },
   ];
   const canCompleteChallenge = selectedDayIndex >= activeChallengeLength - 1;
+  const selectedChallengeDay = selectedDay.challengeDay;
 
   const renderActiveTab = () => {
     if (activeTab === 'habits') {
@@ -339,6 +348,28 @@ export default function ResetFocusTracker() {
       );
     }
 
+    if (dashboardView === 'challengeHistory') {
+      return (
+        <ChallengeHistory
+          completed={challengeCompleted}
+          summary={challengeSummaryData}
+          onBack={() => setDashboardView('home')}
+          onOpenReport={() => setDashboardView('challengeReport')}
+        />
+      );
+    }
+
+    if (dashboardView === 'challengeReport') {
+      return (
+        <main className="space-y-4">
+          <button type="button" onClick={() => setDashboardView('challengeHistory')} className="rounded-2xl border border-white/10 bg-zinc-900/80 px-4 py-3 text-sm font-black text-zinc-200 transition active:scale-95">
+            ← Challenge History
+          </button>
+          <ChallengeSummary summary={challengeSummaryData} />
+        </main>
+      );
+    }
+
     return (
       <>
         <Header scoreState={scoreState} selectedScore={selectedScore} progressPercent={progressPercent} />
@@ -355,11 +386,13 @@ export default function ResetFocusTracker() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-lg font-black">Challenge</h3>
-              <p className="text-sm text-zinc-400">{challengeCompleted ? 'Tu primer challenge ya está culminado.' : `Día ${Math.min(selectedDayIndex + 1, activeChallengeLength)} de ${activeChallengeLength}`}</p>
+              <p className="text-sm text-zinc-400">
+                {challengeCompleted ? 'Historial y resumen disponibles.' : selectedChallengeDay ? `Día ${selectedChallengeDay} de ${activeChallengeLength}` : 'Registro diario fuera de challenge.'}
+              </p>
             </div>
             {challengeCompleted ? (
-              <button type="button" onClick={() => setShowChallengeSummary((current) => !current)} className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-black transition active:scale-95">
-                {showChallengeSummary ? 'Ocultar' : 'Ver resumen'}
+              <button type="button" onClick={() => setDashboardView('challengeHistory')} className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-black transition active:scale-95">
+                Historial
               </button>
             ) : canCompleteChallenge ? (
               <button type="button" onClick={completeChallenge} className="rounded-2xl border border-emerald-300/30 bg-emerald-400/10 px-4 py-3 text-sm font-black text-emerald-200 transition active:scale-95">
@@ -373,7 +406,6 @@ export default function ResetFocusTracker() {
             )}
           </div>
         </section>
-        {showChallengeSummary && <ChallengeSummary summary={challengeSummaryData} />}
         <FooterCards resetTracker={resetTracker} />
       </>
     );
@@ -385,6 +417,65 @@ export default function ResetFocusTracker() {
         {renderActiveTab()}
       </div>
       <BottomTabBar activeTab={activeTab} setActiveTab={setActiveTab} />
+    </div>
+  );
+}
+
+function formatShortDate(dateKey) {
+  if (!dateKey) return '--';
+  return new Date(`${dateKey}T00:00:00`).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+}
+
+function ChallengeHistory({ completed, summary, onBack, onOpenReport }) {
+  return (
+    <main className="space-y-4">
+      <button type="button" onClick={onBack} className="rounded-2xl border border-white/10 bg-zinc-900/80 px-4 py-3 text-sm font-black text-zinc-200 transition active:scale-95">
+        ← Dashboard
+      </button>
+      <section className="rounded-[2rem] border border-white/10 bg-zinc-900/80 p-5 shadow-2xl shadow-black/30">
+        <p className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-300">History</p>
+        <h1 className="mt-2 text-3xl font-black">Challenges</h1>
+        <p className="mt-1 text-sm text-zinc-400">Tus ciclos completados vivirán aquí.</p>
+      </section>
+
+      {completed ? (
+        <button
+          type="button"
+          onClick={onOpenReport}
+          className="w-full rounded-[2rem] border border-emerald-300/20 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black p-5 text-left shadow-2xl shadow-black/30 transition active:scale-[0.99]"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">Completed</p>
+              <h2 className="mt-2 text-2xl font-black">{summary.title}</h2>
+              <p className="mt-1 text-sm text-zinc-400">{summary.challengeLength} días · {formatShortDate(summary.startDate)} - {formatShortDate(summary.endDate)}</p>
+            </div>
+            <div className="rounded-3xl border border-white/10 bg-white px-4 py-3 text-center text-black">
+              <p className="text-2xl font-black">{summary.effectiveness}%</p>
+              <p className="text-[10px] font-bold uppercase">index</p>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <HistoryMetric label="Wins" value={summary.wins} />
+            <HistoryMetric label="Streak" value={`${summary.longestStreak}d`} />
+            <HistoryMetric label="Workout" value={summary.workoutDays} />
+          </div>
+        </button>
+      ) : (
+        <section className="rounded-[2rem] border border-dashed border-white/10 bg-zinc-900/60 p-6 text-center">
+          <p className="text-lg font-black">Aún no hay challenges completados</p>
+          <p className="mt-1 text-sm text-zinc-500">Cuando culmines uno, aparecerá aquí.</p>
+        </section>
+      )}
+    </main>
+  );
+}
+
+function HistoryMetric({ label, value }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/35 p-3">
+      <p className="text-lg font-black text-white">{value}</p>
+      <p className="text-[10px] font-bold uppercase text-zinc-500">{label}</p>
     </div>
   );
 }

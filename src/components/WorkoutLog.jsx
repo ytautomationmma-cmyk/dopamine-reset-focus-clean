@@ -10,6 +10,15 @@ const getTrackingType = (item) => {
   if (normalized.includes('cable') || normalized.includes('machine') || normalized.includes('weighted')) return 'weighted';
   return 'bodyweight';
 };
+const formatShortDate = (dateKey) => {
+  if (!dateKey) return '--';
+  return new Date(`${dateKey}T00:00:00`).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+};
+const formatFullDate = (dateKey) => {
+  if (!dateKey) return 'Fecha no asignada';
+  return new Date(`${dateKey}T00:00:00`).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+};
+const formatEntryDay = (entry) => entry.challengeDay ? `Día ${entry.challengeDay}` : formatShortDate(entry.date);
 
 export default function WorkoutLog(props) {
   const {
@@ -35,7 +44,7 @@ export default function WorkoutLog(props) {
 
   return (
     <section className="mt-5 rounded-[2rem] border border-white/10 bg-zinc-900/80 p-5 shadow-2xl shadow-black/30">
-      <div className="mb-5"><h2 className="text-2xl font-black">🏋️ Workout Log Día {selectedDay.day}</h2><p className="text-sm text-zinc-400">Selecciona músculo, ejercicio y registra tu progreso.</p></div>
+      <div className="mb-5"><h2 className="text-2xl font-black">🏋️ Workout Log{selectedDay.challengeDay ? ` Día ${selectedDay.challengeDay}` : ''}</h2><p className="text-sm capitalize text-zinc-400">{formatFullDate(selectedDay.date)} · Selecciona músculo, ejercicio y registra tu progreso.</p></div>
       <MusclePicker muscleGroups={muscleGroups} selectedMuscle={selectedMuscle} setSelectedMuscle={setSelectedMuscle} setSelectedExercise={setSelectedExercise} getExercisesForMuscle={getExercisesForMuscle} />
       <ExercisePicker selectedMuscle={selectedMuscle} selectedExercise={selectedExercise} setSelectedExercise={setSelectedExercise} selectedMuscleExercises={selectedMuscleExercises} addWorkoutExercise={addWorkoutExercise} renameExerciseName={renameExerciseName} setRenameExerciseName={setRenameExerciseName} saveExerciseRename={saveExerciseRename} newExerciseName={newExerciseName} setNewExerciseName={setNewExerciseName} addCustomExercise={addCustomExercise} lastExerciseEntry={lastExerciseEntry} onViewHistory={() => setShowExerciseHistory(true)} />
       <WorkoutEntries selectedDay={selectedDay} removeWorkoutExercise={removeWorkoutExercise} updateCardioData={updateCardioData} calculatePace={calculatePace} updateExerciseSet={updateExerciseSet} removeExerciseSet={removeExerciseSet} addSetToExercise={addSetToExercise} />
@@ -98,7 +107,7 @@ function LastExerciseSummary({ entry, onViewHistory }) {
     const distance = entry.cardioData?.distance ? `${entry.cardioData.distance} ${entry.cardioData.distanceUnit || 'km'}` : '--';
     return (
       <div className="mt-2 space-y-2 text-sm">
-        <p className="font-bold text-zinc-200">Última vez: Día {entry.day}</p>
+        <p className="font-bold text-zinc-200">Última vez: {formatEntryDay(entry)}</p>
         <div className="rounded-2xl border border-white/10 bg-black/40 p-3 text-xs text-zinc-300">
           <p><span className="text-zinc-500">Tiempo:</span> {time}</p>
           <p><span className="text-zinc-500">Distancia:</span> {distance}</p>
@@ -110,7 +119,7 @@ function LastExerciseSummary({ entry, onViewHistory }) {
 
   return (
     <div className="mt-2 space-y-2 text-sm">
-      <p className="font-bold text-zinc-200">Última vez: Día {entry.day}</p>
+      <p className="font-bold text-zinc-200">Última vez: {formatEntryDay(entry)}</p>
       <div className="space-y-1 rounded-2xl border border-white/10 bg-black/40 p-3">
         {sets.map((set, index) => {
           if (trackingType === 'time') {
@@ -148,7 +157,7 @@ function ExerciseHistoryScreen({ calculatePace, exerciseName, history, onBack })
 
       <div className="mb-5 grid grid-cols-3 gap-2">
         <HistoryMetric label="Sesiones" value={entries.length} />
-        <HistoryMetric label="Último día" value={lastEntry ? `Día ${lastEntry.day}` : '--'} />
+        <HistoryMetric label="Último" value={lastEntry ? formatEntryDay(lastEntry) : '--'} />
         <HistoryMetric label="Mejor" value={bestLabel} />
       </div>
 
@@ -160,10 +169,10 @@ function ExerciseHistoryScreen({ calculatePace, exerciseName, history, onBack })
       ) : (
         <div className="space-y-3">
           {entries.map((entry) => (
-            <div key={`${entry.day}-${entry.id}`} className="rounded-3xl border border-white/10 bg-black/40 p-4">
+            <div key={`${entry.date || entry.day}-${entry.id}`} className="rounded-3xl border border-white/10 bg-black/40 p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-bold uppercase text-emerald-300">Día {entry.day}</p>
+                  <p className="text-xs font-bold uppercase text-emerald-300">{formatEntryDay(entry)}</p>
                   <p className="text-lg font-black">{entry.muscle}</p>
                 </div>
                 <p className="rounded-2xl border border-white/10 bg-zinc-950 px-3 py-2 text-xs font-bold text-zinc-300">{getTrackingLabel(entry)}</p>
